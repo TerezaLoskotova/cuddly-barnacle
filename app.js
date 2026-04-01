@@ -4,12 +4,13 @@
 
 // ── State ─────────────────────────────────────────────────
 const state = {
-    tasks:          JSON.parse(localStorage.getItem('vd_tasks')  || '[]'),
-    notes:          JSON.parse(localStorage.getItem('vd_notes')  || '[]'),
-    settings:       JSON.parse(localStorage.getItem('vd_settings') || '{"summaryTime":"20:00"}'),
+    tasks:          JSON.parse(localStorage.getItem('vd_tasks')     || '[]'),
+    notes:          JSON.parse(localStorage.getItem('vd_notes')     || '[]'),
+    recurring:      JSON.parse(localStorage.getItem('vd_recurring') || '[]'),
+    settings:       JSON.parse(localStorage.getItem('vd_settings')  || '{"summaryTime":"20:00"}'),
     currentDate:    todayStr(),   // YYYY-MM-DD string being viewed
     activeTab:      'tasks',      // 'tasks' | 'notes'
-    parsedVoice:    null,         // { text, reminder, type }
+    parsedVoice:    null,         // { text, reminder, type, days? }
     reminderTimers: {},
 };
 
@@ -37,9 +38,10 @@ function uid() {
 }
 
 function save() {
-    localStorage.setItem('vd_tasks',    JSON.stringify(state.tasks));
-    localStorage.setItem('vd_notes',    JSON.stringify(state.notes));
-    localStorage.setItem('vd_settings', JSON.stringify(state.settings));
+    localStorage.setItem('vd_tasks',      JSON.stringify(state.tasks));
+    localStorage.setItem('vd_notes',      JSON.stringify(state.notes));
+    localStorage.setItem('vd_recurring',  JSON.stringify(state.recurring));
+    localStorage.setItem('vd_settings',   JSON.stringify(state.settings));
 }
 
 // ── Voice parsing ──────────────────────────────────────────
@@ -75,9 +77,95 @@ const CZECH_HOURS = {
     'jednadvacet':21, 'dvaadvacet':22, 'třiadvacet':23,
 };
 
+// Day number: 0 = Sunday … 6 = Saturday (matches JS Date.getDay())
+const CZECH_DAYS = {
+    'pondělí':1, 'pondeli':1, 'pondělí':1,
+    'úterý':2,   'utery':2,   'úterý':2,
+    'středu':3,  'středa':3,  'streda':3,  'středu':3,
+    'čtvrtek':4, 'ctvrtek':4,
+    'pátek':5,   'patek':5,   'pátku':5,
+    'sobotu':6,  'sobota':6,
+    'neděli':0,  'neděle':0,  'nedeli':0,  'nedele':0,
+};
+
+const DAY_NAMES_SHORT = ['Ne','Po','Út','St','Čt','Pá','So'];
+const DAY_NAMES_FULL  = ['Neděle','Pondělí','Úterý','Středa','Čtvrtek','Pátek','Sobota'];
+
+/**
+ * Returns { days: number[], time: 'HH:MM', taskText: string } or null.
+ * Detects patterns like "každý pondělí v 9", "každý den ve 14:30",
+ * "každý pracovní den v 17", "každý víkend v 10".
+ */
+function parseRecurringPattern(text) {
+    const t = text.toLowerCase().trim();
+
+    // Must contain "každý" / "každou" to be recurring
+    if (!t.includes('každ')) return null;
+
+    // ── Determine days ──────────────────────────────────────
+    let days = null;
+
+    if (/každ[yý]\s+den\b|denně/.test(t)) {
+        days = [0,1,2,3,4,5,6];
+    } else if (/každ[yý]\s+pracovní\s+den|každ[yý]\s+pracovní/.test(t)) {
+        days = [1,2,3,4,5];
+    } else if (/každ[yý]\s+víkend|každ[ou]\s+sobotu\s+a\s+neděl|každ[ou]\s+neděl\S+\s+a\s+sobotu/.test(t)) {
+        days = [0,6];
+    } else {
+        // Specific day name
+        for (const [name, num] of Object.entries(CZECH_DAYS)) {
+            const re = new RegExp(`každ[youé]+\\s+${name}\\b`);
+            if (re.test(t)) { days = [num]; break; }
+        }
+    }
+
+    if (!days) return null;
+
+    // ── Extract time ────────────────────────────────────────
+    let time = null;
+
+    // Digit time: "v 9", "ve 14:30", "v 9 hodin"
+    const digitMatch = t.match(/\bve?\s+(\d{1,2})(?:[:.h](\d{2}))?(?:\s*hodin[ay]?)?/);
+    if (digitMatch) {
+        const h = parseInt(digitMatch[1]);
+        const m = digitMatch[2] ? parseInt(digitMatch[2]) : 0;
+        if (h >= 0 && h <= 23) time = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    }
+
+    // Word hour fallback
+    if (!time) {
+        const wordRe = new RegExp(`\\bve?\\s+(${Object.keys(CZECH_HOURS).join('|')})(?:\\s*hodin[ay]?)?`);
+        const wm = t.match(wordRe);
+        if (wm) {
+            const h = CZECH_HOURS[wm[1]];
+            if (h !== undefined) time = `${String(h).padStart(2,'0')}:00`;
+        }
+    }
+
+    // ── Strip scheduling words to get task text ─────────────
+    let taskText = text
+        .replace(/každ[youé]+\s+(?:pracovní\s+)?(?:den|víkend|pondělí|úterý|středu|středa|čtvrtek|pátek|sobotu|sobota|neděli|neděle)\b/gi, '')
+        .replace(/denně/gi, '')
+        .replace(/\bve?\s+\d{1,2}(?:[:.h]\d{2})?\s*(?:hodin[ay]?)?\b/gi, '')
+        .replace(/\bve?\s+(?:jednu|dvě|tři|čtyři|pět|šest|sedm|osm|devět|deset|jedenáct|dvanáct)\s*(?:hodin[ay]?)?\b/gi, '')
+        .replace(/připomínk[ay]\s*/gi, '')
+        .replace(/^\s*[,–-]\s*|\s*[,–-]\s*$/g, '')
+        .trim();
+
+    taskText = capitalize(taskText) || 'Připomínka';
+
+    return { days, time, taskText };
+}
+
 function parseVoiceInput(transcript) {
     const raw  = transcript.trim();
     let   text = raw.toLowerCase();
+
+    // Detect recurring intent ("každý pondělí v 9 napsat report")
+    const recurring = parseRecurringPattern(raw);
+    if (recurring) {
+        return { type: 'recurring', text: recurring.taskText, reminder: recurring.time, days: recurring.days };
+    }
 
     // Detect note intent
     if (/^(nápad|poznámka|pozn\.?)\s*[:–-]?\s*/i.test(raw)) {
@@ -237,7 +325,7 @@ function startSummaryCheck() {
 }
 
 // ── CRUD – Tasks ───────────────────────────────────────────
-function addTask(text, reminder, date) {
+function addTask(text, reminder, date, recurringId) {
     if (!text.trim()) return;
     const task = {
         id:           uid(),
@@ -246,6 +334,7 @@ function addTask(text, reminder, date) {
         reminder:     reminder || null,
         reminderFired:false,
         date:         date || state.currentDate,
+        recurringId:  recurringId || null,
         createdAt:    Date.now(),
     };
     state.tasks.push(task);
@@ -283,6 +372,143 @@ function deleteNote(id) {
     state.notes = state.notes.filter(x => x.id !== id);
     save();
     renderNotes();
+}
+
+// ── CRUD – Recurring ───────────────────────────────────────
+/*
+ * Recurring template structure:
+ * { id, text, reminder:'HH:MM'|null, days:[0-6], active:bool,
+ *   spawnedDates:['YYYY-MM-DD',...], createdAt }
+ */
+function addRecurring(text, reminder, days) {
+    if (!text.trim() || !days.length) return;
+    const rec = {
+        id:           uid(),
+        text:         text.trim(),
+        reminder:     reminder || null,
+        days,
+        active:       true,
+        spawnedDates: [],
+        createdAt:    Date.now(),
+    };
+    state.recurring.push(rec);
+    save();
+    spawnRecurringTasks();   // spawn for today immediately if applicable
+    renderRecurring();
+}
+
+function deleteRecurring(id) {
+    state.recurring = state.recurring.filter(r => r.id !== id);
+    save();
+    renderRecurring();
+}
+
+function toggleRecurring(id) {
+    const r = state.recurring.find(x => x.id === id);
+    if (r) { r.active = !r.active; save(); renderRecurring(); }
+}
+
+/**
+ * For each active recurring template whose day matches today,
+ * create a task for today (if not already spawned).
+ */
+function spawnRecurringTasks() {
+    const today    = todayStr();
+    const todayDay = new Date(today + 'T00:00:00').getDay();
+    let   spawned  = false;
+
+    state.recurring.forEach(rec => {
+        if (!rec.active) return;
+        if (!rec.days.includes(todayDay)) return;
+        if (rec.spawnedDates.includes(today)) return;
+
+        addTask(rec.text, rec.reminder, today, rec.id);
+        rec.spawnedDates.push(today);
+        spawned = true;
+    });
+
+    if (spawned) save();
+}
+
+// Label for day array, e.g. [1,2,3,4,5] → "Po–Pá"
+function daysLabel(days) {
+    const sorted = [...days].sort((a,b) => a - b);
+    if (sorted.length === 7) return 'Každý den';
+    if (sorted.join() === '1,2,3,4,5') return 'Pracovní dny';
+    if (sorted.join() === '0,6') return 'Víkend';
+    return sorted.map(d => DAY_NAMES_SHORT[d]).join(', ');
+}
+
+// ── Render: Recurring list ─────────────────────────────────
+function renderRecurring() {
+    const list  = document.getElementById('recurring-list');
+    const empty = document.getElementById('recurring-empty');
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    if (state.recurring.length === 0) {
+        empty.classList.remove('hidden');
+        return;
+    }
+    empty.classList.add('hidden');
+
+    state.recurring.forEach(rec => {
+        const li = document.createElement('li');
+        li.className = `recurring-item${rec.active ? '' : ' inactive'}`;
+
+        const timeStr = rec.reminder ? ` v ${rec.reminder}` : '';
+
+        li.innerHTML = `
+            <div class="recurring-body">
+                <div class="recurring-text">${escHtml(rec.text)}</div>
+                <div class="recurring-meta">${daysLabel(rec.days)}${timeStr}</div>
+            </div>
+            <button class="recurring-toggle icon-btn" data-id="${rec.id}" title="${rec.active ? 'Pozastavit' : 'Aktivovat'}">
+                ${rec.active
+                    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                         <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+                       </svg>`
+                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                         <polygon points="5 3 19 12 5 21 5 3"/>
+                       </svg>`}
+            </button>
+            <button class="task-delete" data-id="${rec.id}" aria-label="Smazat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+                </svg>
+            </button>
+        `;
+        list.appendChild(li);
+    });
+
+    list.querySelectorAll('.recurring-toggle').forEach(btn => {
+        btn.addEventListener('click', () => toggleRecurring(btn.dataset.id));
+    });
+    list.querySelectorAll('.task-delete').forEach(btn => {
+        btn.addEventListener('click', () => deleteRecurring(btn.dataset.id));
+    });
+}
+
+// ── Recurring modal ────────────────────────────────────────
+function openRecurringModal() {
+    renderRecurring();
+    // Reset form
+    document.getElementById('rec-task-input').value = '';
+    document.getElementById('rec-time-input').value = '';
+    document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('recurring-modal').classList.remove('hidden');
+}
+
+function closeRecurringModal() {
+    document.getElementById('recurring-modal').classList.add('hidden');
+}
+
+function getSelectedDays() {
+    return [...document.querySelectorAll('.day-btn.active')]
+        .map(b => parseInt(b.dataset.day));
 }
 
 // ── Rollover ───────────────────────────────────────────────
@@ -337,6 +563,10 @@ function renderTasks() {
         li.className = `task-item${task.done ? ' done' : ''}`;
         li.dataset.id = task.id;
 
+        const recurringBadge = task.recurringId
+            ? `<span class="recurring-badge" title="Opakující se">↺</span>`
+            : '';
+
         const reminderHtml = task.reminder
             ? `<div class="task-reminder${task.reminderFired ? ' fired' : ''}">
                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
@@ -352,7 +582,7 @@ function renderTasks() {
                 <svg class="check-svg" viewBox="0 0 12 12"><polyline points="1.5 6 4.5 9 10.5 3"/></svg>
             </button>
             <div class="task-body">
-                <div class="task-text">${escHtml(task.text)}</div>
+                <div class="task-text">${recurringBadge}${escHtml(task.text)}</div>
                 ${reminderHtml}
             </div>
             <button class="task-delete" data-id="${task.id}" aria-label="Smazat">
@@ -539,22 +769,31 @@ function showParsedPreview(transcript) {
 
     if (parsed.type === 'note') {
         taskEl.textContent = `Nápad: ${parsed.text}`;
+    } else if (parsed.type === 'recurring') {
+        taskEl.textContent = `↺ ${parsed.text}`;
+        if (parsed.days) {
+            remEl.textContent = daysLabel(parsed.days) + (parsed.reminder ? ` v ${parsed.reminder}` : '');
+            remEl.classList.remove('hidden');
+        }
     }
 
     preview.classList.remove('hidden');
     box.classList.remove('hidden');
 
-    document.getElementById('voice-status').textContent =
-        parsed.type === 'note' ? 'Uložit jako nápad?' : 'Přidat jako úkol?';
+    const statusMap = { note: 'Uložit jako nápad?', recurring: 'Přidat jako opakující se připomínku?', task: 'Přidat jako úkol?' };
+    document.getElementById('voice-status').textContent = statusMap[parsed.type] || statusMap.task;
 }
 
 function confirmVoice() {
     if (!state.parsedVoice) return;
-    const { type, text, reminder } = state.parsedVoice;
+    const { type, text, reminder, days } = state.parsedVoice;
 
     if (type === 'note') {
         addNote(text);
         switchTab('notes');
+    } else if (type === 'recurring') {
+        addRecurring(text, reminder, days || []);
+        openRecurringModal();
     } else {
         addTask(text, reminder);
         switchTab('tasks');
@@ -663,6 +902,7 @@ function navigateDate(delta) {
 
 // ── Init ───────────────────────────────────────────────────
 function init() {
+    spawnRecurringTasks();   // create today's instances before rendering
     renderDateNav();
     renderTasks();
     renderNotes();
@@ -744,6 +984,43 @@ function init() {
     });
     document.getElementById('deny-notif').addEventListener('click', () => {
         document.getElementById('notif-banner').classList.add('hidden');
+    });
+
+    // Recurring modal
+    document.getElementById('recurring-btn').addEventListener('click', openRecurringModal);
+    document.getElementById('close-recurring').addEventListener('click', closeRecurringModal);
+    document.getElementById('recurring-modal').addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeRecurringModal();
+    });
+
+    // Day picker buttons
+    document.querySelectorAll('.day-btn').forEach(btn => {
+        btn.addEventListener('click', () => btn.classList.toggle('active'));
+    });
+
+    // Day preset buttons (Pracovní dny / Víkend / Každý den)
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const days = btn.dataset.days.split(',').map(Number);
+            document.querySelectorAll('.day-btn').forEach(b => {
+                b.classList.toggle('active', days.includes(parseInt(b.dataset.day)));
+            });
+        });
+    });
+
+    // Add recurring manually
+    document.getElementById('confirm-recurring').addEventListener('click', () => {
+        const text    = document.getElementById('rec-task-input').value.trim();
+        const time    = document.getElementById('rec-time-input').value || null;
+        const selDays = getSelectedDays();
+        if (!text || selDays.length === 0) {
+            showInAppAlert('Vyber alespoň jeden den a napiš název připomínky.');
+            return;
+        }
+        addRecurring(text, time, selDays);
+        document.getElementById('rec-task-input').value = '';
+        document.getElementById('rec-time-input').value = '';
+        document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
     });
 
     // Close modals on overlay click

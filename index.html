@@ -68,7 +68,7 @@
                     <span class="pulse-ring"></span>
                 </button>
                 <div id="voice-status" class="voice-status">Klikni na mikrofon a nadiktuj úkol nebo nápad</div>
-                <div class="voice-hint">Např.: <em>„Zavolat mamince, připomeň ve 14 hodin"</em><br>nebo: <em>„Nápad: nový design webu"</em></div>
+                <div class="voice-hint">Např.: <em>„Zavolat mamince, připomeň ve 14 hodin"</em><br>nebo: <em>„Každý pondělí v 9 napsat report"</em><br>nebo: <em>„Nápad: nový design webu"</em></div>
 
                 <div id="transcript-box" class="transcript-box hidden">
                     <p id="transcript-text"></p>
@@ -152,6 +152,15 @@
 
         <!-- ── Footer ── -->
         <footer>
+            <button id="recurring-btn" class="btn btn-footer-secondary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <polyline points="17 1 21 5 17 9"/>
+                    <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                    <polyline points="7 23 3 19 7 15"/>
+                    <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                </svg>
+                Opakující se
+            </button>
             <button id="summary-btn" class="btn btn-summary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -219,6 +228,61 @@
                 </label>
                 <p class="settings-hint">Každý den v tento čas se automaticky zobrazí shrnutí s přehledem splněných a nesplněných úkolů.</p>
                 <button id="save-settings" class="btn btn-primary">Uložit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Recurring modal ── -->
+    <div id="recurring-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Opakující se připomínky</h2>
+                <button id="close-recurring" class="icon-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+
+                <!-- Existing recurring tasks -->
+                <ul id="recurring-list" class="recurring-list"></ul>
+                <p id="recurring-empty" class="summary-empty">Zatím žádné opakující se připomínky.</p>
+
+                <hr class="modal-divider">
+
+                <!-- Add new recurring -->
+                <h3 class="summary-heading" style="margin-top:0">Přidat novou</h3>
+
+                <div class="form-row">
+                    <input type="text" id="rec-task-input" placeholder="Co chceš připomenout?" class="input" />
+                </div>
+
+                <!-- Day picker -->
+                <div class="day-picker">
+                    <button class="day-btn" data-day="1">Po</button>
+                    <button class="day-btn" data-day="2">Út</button>
+                    <button class="day-btn" data-day="3">St</button>
+                    <button class="day-btn" data-day="4">Čt</button>
+                    <button class="day-btn" data-day="5">Pá</button>
+                    <button class="day-btn" data-day="6">So</button>
+                    <button class="day-btn" data-day="0">Ne</button>
+                </div>
+                <div class="day-presets">
+                    <button class="btn btn-small btn-outline preset-btn" data-days="1,2,3,4,5">Pracovní dny</button>
+                    <button class="btn btn-small btn-outline preset-btn" data-days="0,6">Víkend</button>
+                    <button class="btn btn-small btn-outline preset-btn" data-days="0,1,2,3,4,5,6">Každý den</button>
+                </div>
+
+                <div class="form-row form-row-split" style="margin-top:10px">
+                    <label>
+                        Čas připomínky:
+                        <input type="time" id="rec-time-input" class="input input-time" />
+                    </label>
+                    <button id="confirm-recurring" class="btn btn-primary">Přidat</button>
+                </div>
+
             </div>
         </div>
     </div>

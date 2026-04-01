@@ -425,18 +425,30 @@ footer {
     border-top: 1px solid var(--border);
     padding: 12px 20px;
     display: flex;
-    justify-content: center;
+    gap: 10px;
 }
 
 .btn-summary {
     background: var(--text);
     color: #fff;
-    width: 100%;
+    flex: 1;
     padding: 13px 20px;
     border-radius: 10px;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
 }
 .btn-summary:hover { background: #333; }
+
+.btn-footer-secondary {
+    background: var(--primary-light);
+    color: var(--primary);
+    border: 1px solid #d4ccff;
+    flex: 0 0 auto;
+    padding: 13px 14px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+.btn-footer-secondary:hover { background: #ddd8ff; }
 
 /* ── Input ─────────────────────────────────────────────── */
 .input {
@@ -646,6 +658,107 @@ footer {
     margin-top: 4px;
     font-size: 0.76rem;
     color: var(--text-muted);
+}
+
+/* ── Recurring badge on task item ─────────────────────── */
+.recurring-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    color: var(--primary);
+    margin-right: 5px;
+    font-weight: 700;
+    vertical-align: middle;
+}
+
+/* ── Recurring list items ──────────────────────────────── */
+.recurring-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.recurring-item {
+    background: var(--primary-light);
+    border: 1px solid #d4ccff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.recurring-item.inactive {
+    background: var(--bg);
+    border-color: var(--border);
+    opacity: .6;
+}
+
+.recurring-body { flex: 1; min-width: 0; }
+
+.recurring-text {
+    font-size: 0.92rem;
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.recurring-meta {
+    font-size: 0.78rem;
+    color: var(--primary);
+    margin-top: 2px;
+}
+.recurring-item.inactive .recurring-meta { color: var(--text-muted); }
+
+.recurring-toggle { color: var(--primary); }
+.recurring-toggle:hover { background: #d4ccff; }
+
+/* ── Day picker ────────────────────────────────────────── */
+.day-picker {
+    display: flex;
+    gap: 5px;
+    margin: 10px 0 8px;
+    flex-wrap: wrap;
+}
+
+.day-btn {
+    flex: 1;
+    min-width: 36px;
+    padding: 8px 4px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-align: center;
+    transition: background .15s, color .15s, border-color .15s;
+}
+
+.day-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+.day-btn:hover:not(.active) {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.day-presets {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 2px;
+}
+
+/* ── Modal divider ─────────────────────────────────────── */
+.modal-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 16px 0;
 }
 
 /* ── In-app alert ──────────────────────────────────────── */
