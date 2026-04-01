@@ -987,6 +987,60 @@ function saveSettings() {
     showInAppAlert('Nastavení uloženo.');
 }
 
+// ── Export / Import ────────────────────────────────────────
+function exportData() {
+    const backup = {
+        version:   2,
+        exportedAt: new Date().toISOString(),
+        tasks:     state.tasks,
+        notes:     state.notes,
+        recurring: state.recurring,
+        settings:  state.settings,
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const date = todayStr();
+    a.href     = url;
+    a.download = `itinerar-zaloha-${date}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showInAppAlert('Záloha stažena.');
+}
+
+function importData(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const backup = JSON.parse(e.target.result);
+            if (!backup.tasks && !backup.notes) throw new Error('Neplatný soubor');
+
+            // Merge: add imported items that don't already exist (by id)
+            const existingTaskIds = new Set(state.tasks.map(t => t.id));
+            const newTasks = (backup.tasks || []).filter(t => !existingTaskIds.has(t.id));
+            state.tasks.push(...newTasks);
+
+            const existingNoteIds = new Set(state.notes.map(n => n.id));
+            const newNotes = (backup.notes || []).filter(n => !existingNoteIds.has(n.id));
+            state.notes.push(...newNotes);
+
+            const existingRecIds = new Set(state.recurring.map(r => r.id));
+            const newRec = (backup.recurring || []).filter(r => !existingRecIds.has(r.id));
+            state.recurring.push(...newRec);
+
+            save();
+            renderTasks();
+            renderNotes();
+            closeSettingsModal();
+            showInAppAlert(`Importováno: ${newTasks.length} úkolů, ${newNotes.length} nápadů.`);
+        } catch (err) {
+            showInAppAlert('Chyba při importu — zkontroluj soubor.');
+        }
+    };
+    reader.readAsText(file);
+}
+
 // ── Notifications ──────────────────────────────────────────
 function checkNotificationPermission() {
     if (!('Notification' in window)) return;
@@ -1081,6 +1135,11 @@ function init() {
     document.getElementById('settings-btn').addEventListener('click', openSettingsModal);
     document.getElementById('close-settings').addEventListener('click', closeSettingsModal);
     document.getElementById('save-settings').addEventListener('click',  saveSettings);
+    document.getElementById('export-btn').addEventListener('click', exportData);
+    document.getElementById('import-file').addEventListener('change', e => {
+        importData(e.target.files[0]);
+        e.target.value = ''; // reset so same file can be imported again if needed
+    });
 
     // Notification banner
     document.getElementById('allow-notif').addEventListener('click', () => {
