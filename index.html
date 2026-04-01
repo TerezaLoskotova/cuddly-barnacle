@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#5b4fcf">
+    <meta name="description" content="Hlasový deník — diktuj úkoly, nápady a připomínky">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Deník">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Hlasový deník</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+
+        <!-- ── Header ── -->
+        <header>
+            <div class="header-top">
+                <div class="date-nav">
+                    <button id="prev-day-btn" class="icon-btn" title="Předchozí den">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                    </button>
+                    <div class="date-center">
+                        <h1>Hlasový deník</h1>
+                        <p id="date-display"></p>
+                    </div>
+                    <button id="next-day-btn" class="icon-btn" title="Následující den">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                    </button>
+                </div>
+                <button id="settings-btn" class="icon-btn" title="Nastavení">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </button>
+            </div>
+            <button id="go-today-btn" class="btn btn-small btn-outline go-today hidden">Zpět na dnes</button>
+        </header>
+
+        <!-- ── Notification permission banner ── -->
+        <div id="notif-banner" class="banner hidden">
+            <p>Chceš povolit notifikace pro připomínky?</p>
+            <div class="banner-actions">
+                <button id="allow-notif" class="btn btn-small btn-primary">Povolit</button>
+                <button id="deny-notif" class="btn btn-small btn-ghost">Ne, díky</button>
+            </div>
+        </div>
+
+        <main>
+
+            <!-- ── Voice input ── -->
+            <section id="voice-section">
+                <button id="mic-btn" class="mic-button" title="Klikni a mluv">
+                    <svg class="mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" y1="19" x2="12" y2="23"/>
+                        <line x1="8" y1="23" x2="16" y2="23"/>
+                    </svg>
+                    <span class="pulse-ring"></span>
+                </button>
+                <div id="voice-status" class="voice-status">Klikni na mikrofon a nadiktuj úkol nebo nápad</div>
+                <div class="voice-hint">Např.: <em>„Zavolat mamince, připomeň ve 14 hodin"</em><br>nebo: <em>„Nápad: nový design webu"</em></div>
+
+                <div id="transcript-box" class="transcript-box hidden">
+                    <p id="transcript-text"></p>
+                    <div id="parsed-preview" class="parsed-preview hidden">
+                        <span id="parsed-task"></span>
+                        <span id="parsed-reminder" class="reminder-badge hidden"></span>
+                    </div>
+                    <div class="transcript-actions">
+                        <button id="confirm-voice" class="btn btn-primary">Uložit</button>
+                        <button id="discard-voice" class="btn btn-ghost">Zahodit</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── Manual add toggle ── -->
+            <div id="manual-toggle-row">
+                <button id="add-manual-btn" class="btn btn-outline btn-sm">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Přidat ručně
+                </button>
+            </div>
+
+            <!-- ── Manual add form ── -->
+            <section id="manual-form" class="card hidden">
+                <div class="form-row">
+                    <input type="text" id="manual-task-input" placeholder="Úkol nebo nápad…" class="input" />
+                </div>
+                <div class="form-row form-row-split">
+                    <label>
+                        Připomínka v:
+                        <input type="time" id="manual-time-input" class="input input-time" />
+                    </label>
+                    <div class="form-actions">
+                        <button id="confirm-manual" class="btn btn-primary">Přidat</button>
+                        <button id="cancel-manual" class="btn btn-ghost">Zrušit</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── Tabs ── -->
+            <div class="tab-bar">
+                <button id="tab-tasks" class="tab-btn active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                        <polyline points="9 11 12 14 22 4"/>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    Úkoly
+                </button>
+                <button id="tab-notes" class="tab-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                    </svg>
+                    Nápady
+                </button>
+            </div>
+
+            <!-- ── Tasks section ── -->
+            <section id="tasks-section">
+                <div class="tasks-header">
+                    <h2>Úkoly</h2>
+                    <span id="task-count" class="task-count"></span>
+                </div>
+                <ul id="task-list"></ul>
+                <p id="empty-state" class="empty-state">Zatím žádné úkoly.<br>Nadiktuj nebo přidej první úkol!</p>
+            </section>
+
+            <!-- ── Notes section ── -->
+            <section id="notes-section" class="hidden">
+                <div class="tasks-header">
+                    <h2>Nápady &amp; poznámky</h2>
+                </div>
+                <ul id="note-list"></ul>
+                <p id="note-empty-state" class="empty-state">Zatím žádné nápady.<br>Řekni <em>„Nápad:"</em> nebo přidej ručně.</p>
+            </section>
+
+        </main>
+
+        <!-- ── Footer ── -->
+        <footer>
+            <button id="summary-btn" class="btn btn-summary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                </svg>
+                Shrnutí dne
+            </button>
+        </footer>
+
+    </div><!-- /#app -->
+
+    <!-- ── Summary modal ── -->
+    <div id="summary-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Shrnutí dne</h2>
+                <button id="close-summary" class="icon-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="summary-done-section">
+                    <h3 class="summary-heading done-heading">Splněno</h3>
+                    <ul id="summary-done-list" class="summary-list done-list"></ul>
+                    <p id="summary-done-empty" class="summary-empty hidden">Žádné splněné úkoly.</p>
+                </div>
+                <div id="summary-pending-section">
+                    <h3 class="summary-heading pending-heading">Nesplněno</h3>
+                    <ul id="summary-pending-list" class="summary-list pending-list"></ul>
+                    <p id="summary-pending-empty" class="summary-empty hidden">Všechno splněno!</p>
+                </div>
+                <div id="rollover-section" class="rollover-section hidden">
+                    <p>Chceš přesunout nesplněné úkoly na <strong>zítra</strong>?</p>
+                    <div class="rollover-actions">
+                        <button id="rollover-btn" class="btn btn-primary">Přesunout na zítra</button>
+                        <button id="dismiss-btn" class="btn btn-ghost">Zahodit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Settings modal ── -->
+    <div id="settings-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Nastavení</h2>
+                <button id="close-settings" class="icon-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <label class="settings-label">
+                    Automatické shrnutí dne v:
+                    <input type="time" id="summary-time-input" class="input input-time" value="20:00" />
+                </label>
+                <p class="settings-hint">Každý den v tento čas se automaticky zobrazí shrnutí s přehledem splněných a nesplněných úkolů.</p>
+                <button id="save-settings" class="btn btn-primary">Uložit</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
