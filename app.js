@@ -167,6 +167,13 @@ function parseVoiceInput(transcript) {
         return { type: 'recurring', text: recurring.taskText, reminder: recurring.time, days: recurring.days };
     }
 
+    // Detect priority intent ("důležité: zavolat doktorovi" / "priorita: report")
+    const priorityMatch = raw.match(/^(?:důležité?|priorita|urgentní?|naléhavé?)\s*[:–-]?\s*/i);
+    if (priorityMatch) {
+        const taskText = capitalize(raw.slice(priorityMatch[0].length).trim());
+        return { type: 'task', text: taskText, reminder: null, priority: true };
+    }
+
     // Detect note intent
     if (/^(nápad|poznámka|pozn\.?)\s*[:–-]?\s*/i.test(raw)) {
         const noteText = raw.replace(/^(nápad|poznámka|pozn\.?)\s*[:–-]?\s*/i, '').trim();
@@ -395,12 +402,13 @@ function startSummaryCheck() {
 }
 
 // ── CRUD – Tasks ───────────────────────────────────────────
-function addTask(text, reminder, date, recurringId) {
+function addTask(text, reminder, date, recurringId, priority) {
     if (!text.trim()) return;
     const task = {
         id:           uid(),
         text:         text.trim(),
         done:         false,
+        priority:     !!priority,
         reminder:     reminder || null,
         reminderFired:false,
         date:         date || state.currentDate,
@@ -416,6 +424,11 @@ function addTask(text, reminder, date, recurringId) {
 function toggleTask(id) {
     const t = state.tasks.find(x => x.id === id);
     if (t) { t.done = !t.done; save(); renderTasks(); }
+}
+
+function togglePriority(id) {
+    const t = state.tasks.find(x => x.id === id);
+    if (t) { t.priority = !t.priority; save(); renderTasks(); }
 }
 
 function deleteTask(id) {
@@ -623,19 +636,21 @@ function renderTasks() {
     const done    = tasks.filter(t => t.done).length;
     count.textContent = `${done}/${tasks.length}`;
 
-    // Sort: undone first, then done
+    // Sort: priority undone → undone → done
     const sorted = [...tasks].sort((a, b) => {
         if (a.done !== b.done) return a.done ? 1 : -1;
+        if (!a.done && a.priority !== b.priority) return a.priority ? -1 : 1;
         return a.createdAt - b.createdAt;
     });
 
     sorted.forEach(task => {
-        const isRecurring    = !!task.recurringId;
-        const overPostponed  = (task.postponeCount || 0) >= 3;
+        const isRecurring   = !!task.recurringId;
+        const overPostponed = (task.postponeCount || 0) >= 3;
 
         let cls = 'task-item';
-        if (task.done)       cls += ' done';
-        if (isRecurring)     cls += ' is-recurring';
+        if (task.done)                   cls += ' done';
+        if (task.priority && !task.done) cls += ' is-priority';
+        if (isRecurring)                 cls += ' is-recurring';
         if (overPostponed && !task.done) cls += ' over-postponed';
 
         const li = document.createElement('li');
@@ -656,6 +671,14 @@ function renderTasks() {
                </div>`
             : '';
 
+        const starFilled = task.priority
+            ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="#f5a623" stroke="#f5a623" stroke-width="1.5">
+                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+               </svg>`
+            : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5">
+                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+               </svg>`;
+
         li.innerHTML = `
             <button class="task-check" data-id="${task.id}" aria-label="Splněno">
                 <svg class="check-svg" viewBox="0 0 12 12"><polyline points="1.5 6 4.5 9 10.5 3"/></svg>
@@ -664,6 +687,7 @@ function renderTasks() {
                 <div class="task-text">${recurringBadge}${escHtml(task.text)}${overPostponed && !task.done ? `<span class="postpone-badge">odloženo ${task.postponeCount}×</span>` : ''}</div>
                 ${reminderHtml}
             </div>
+            <button class="star-btn${task.priority ? ' active' : ''}" data-id="${task.id}" aria-label="Priorita">${starFilled}</button>
             <button class="task-delete" data-id="${task.id}" aria-label="Smazat">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"/>
@@ -676,7 +700,10 @@ function renderTasks() {
         list.appendChild(li);
     });
 
-    // Delegate events
+    // Delegate events — star, check, delete
+    list.querySelectorAll('.star-btn').forEach(btn => {
+        btn.addEventListener('click', () => togglePriority(btn.dataset.id));
+    });
     list.querySelectorAll('.task-check').forEach(btn => {
         btn.addEventListener('click', () => toggleTask(btn.dataset.id));
     });
@@ -837,7 +864,7 @@ function showParsedPreview(transcript) {
 
     document.getElementById('transcript-text').textContent = transcript;
 
-    taskEl.textContent = parsed.text;
+    taskEl.textContent = (parsed.priority ? '⭐ ' : '') + parsed.text;
     if (parsed.reminder) {
         remEl.textContent = `Připomínka v ${parsed.reminder}`;
         remEl.classList.remove('hidden');
@@ -865,7 +892,7 @@ function showParsedPreview(transcript) {
 
 function confirmVoice() {
     if (!state.parsedVoice) return;
-    const { type, text, reminder, days } = state.parsedVoice;
+    const { type, text, reminder, days, priority } = state.parsedVoice;
 
     if (type === 'note') {
         addNote(text);
@@ -874,7 +901,7 @@ function confirmVoice() {
         addRecurring(text, reminder, days || []);
         openRecurringModal();
     } else {
-        addTask(text, reminder);
+        addTask(text, reminder, null, null, !!priority);
         switchTab('tasks');
     }
 

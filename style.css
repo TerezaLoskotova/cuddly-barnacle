@@ -674,6 +674,32 @@ footer {
     vertical-align: middle;
 }
 
+/* ── Star / priority button ────────────────────────────── */
+.star-btn {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    color: var(--border);
+    transition: color .15s, background .15s;
+    display: flex;
+    align-items: center;
+}
+.star-btn:hover,
+.star-btn.active { color: #f5a623; }
+.task-item:hover .star-btn { color: #d4c4a0; }
+.star-btn.active:hover { color: #e09510; }
+
+/* Task item — priority variant (gold accent) */
+.task-item.is-priority {
+    border-color: #f5d98a;
+    background: #fffbf0;
+    border-left: 3px solid #f5a623;
+}
+.task-item.is-priority .task-text { font-weight: 600; }
+
 /* Task item — recurring variant (mint) */
 .task-item.is-recurring {
     background: var(--mint-bg);
