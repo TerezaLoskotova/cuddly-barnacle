@@ -277,23 +277,93 @@ function scheduleReminder(task) {
 }
 
 function fireReminder(task) {
-    // Mark as fired
     const t = state.tasks.find(x => x.id === task.id);
     if (t) { t.reminderFired = true; save(); renderTasks(); }
 
+    // Always show the in-app snooze panel (works even when tab is open)
+    showSnoozeAlert(task);
+
     if (Notification.permission === 'granted') {
-        try {
-            new Notification('Připomínka', {
-                body: task.text,
-                icon: 'icon-192.png',
-                tag:  task.id,
-                requireInteraction: true,
-            });
-        } catch (e) { console.warn('Notification failed', e); }
-    } else {
-        // Fallback: highlight in UI
-        showInAppAlert(`⏰ Připomínka: ${task.text}`);
+        const notifOpts = {
+            body: task.text,
+            icon: 'icon-192.png',
+            tag:  task.id,
+            requireInteraction: true,
+            actions: [
+                { action: 'done',    title: '✓ Hotovo' },
+                { action: 'snooze1', title: '+1 hodina' },
+                { action: 'snooze3', title: '+3 hodiny' },
+            ],
+        };
+        // SW notification supports action buttons; plain Notification does not
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.ready
+                .then(reg => reg.showNotification(`⏰ ${task.text}`, notifOpts))
+                .catch(() => { try { new Notification(`⏰ ${task.text}`, notifOpts); } catch(e){} });
+        } else {
+            try { new Notification(`⏰ ${task.text}`, notifOpts); } catch(e) {}
+        }
     }
+}
+
+let activeSnoozeAlert = null;
+
+function showSnoozeAlert(task) {
+    if (activeSnoozeAlert) { activeSnoozeAlert.remove(); activeSnoozeAlert = null; }
+
+    const el = document.createElement('div');
+    el.className = 'snooze-alert';
+    el.innerHTML = `
+        <div class="snooze-alert-title">⏰ Připomínka</div>
+        <div class="snooze-alert-text">${escHtml(task.text)}</div>
+        <div class="snooze-alert-actions">
+            <button class="btn btn-primary" data-action="done">✓ Hotovo</button>
+            <button class="btn btn-outline" data-action="snooze1">+1 hodina</button>
+            <button class="btn btn-outline" data-action="snooze3">+3 hodiny</button>
+        </div>
+    `;
+
+    el.querySelectorAll('[data-action]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const action = btn.dataset.action;
+            if (action === 'done')    toggleTask(task.id);
+            if (action === 'snooze1') snoozeTask(task.id, 1);
+            if (action === 'snooze3') snoozeTask(task.id, 3);
+            el.classList.remove('show');
+            setTimeout(() => el.remove(), 350);
+            activeSnoozeAlert = null;
+        });
+    });
+
+    document.body.appendChild(el);
+    activeSnoozeAlert = el;
+    setTimeout(() => el.classList.add('show'), 10);
+    // Auto-dismiss after 30 s
+    setTimeout(() => {
+        if (el.parentNode) {
+            el.classList.remove('show');
+            setTimeout(() => el.remove(), 350);
+            if (activeSnoozeAlert === el) activeSnoozeAlert = null;
+        }
+    }, 30_000);
+}
+
+function snoozeTask(id, hours) {
+    const task = state.tasks.find(x => x.id === id);
+    if (!task) return;
+
+    const newTime = new Date();
+    newTime.setHours(newTime.getHours() + hours);
+    const hh = String(newTime.getHours()).padStart(2, '0');
+    const mm = String(newTime.getMinutes()).padStart(2, '0');
+
+    task.reminder      = `${hh}:${mm}`;
+    task.reminderFired = false;
+    task.postponeCount = (task.postponeCount || 0) + 1;
+    save();
+    scheduleReminder(task);
+    renderTasks();
+    showInAppAlert(`Odloženo na ${hh}:${mm}`);
 }
 
 function showInAppAlert(msg) {
@@ -515,11 +585,12 @@ function getSelectedDays() {
 function rolloverPendingTasks() {
     const tomorrow = addDays(state.currentDate, 1);
     const pending  = state.tasks.filter(t => t.date === state.currentDate && !t.done);
-    pending.forEach(t => {
-        addTask(t.text, t.reminder, tomorrow);
+    pending.forEach(orig => {
+        addTask(orig.text, orig.reminder, tomorrow, orig.recurringId);
+        const newTask = state.tasks[state.tasks.length - 1];
+        newTask.postponeCount = (orig.postponeCount || 0) + 1;
+        orig.carried = true;
     });
-    // Mark originals as "carried over"
-    pending.forEach(t => { t.carried = true; });
     save();
     renderTasks();
     closeSummaryModal();
@@ -559,8 +630,16 @@ function renderTasks() {
     });
 
     sorted.forEach(task => {
+        const isRecurring    = !!task.recurringId;
+        const overPostponed  = (task.postponeCount || 0) >= 3;
+
+        let cls = 'task-item';
+        if (task.done)       cls += ' done';
+        if (isRecurring)     cls += ' is-recurring';
+        if (overPostponed && !task.done) cls += ' over-postponed';
+
         const li = document.createElement('li');
-        li.className = `task-item${task.done ? ' done' : ''}`;
+        li.className = cls;
         li.dataset.id = task.id;
 
         const recurringBadge = task.recurringId
@@ -582,7 +661,7 @@ function renderTasks() {
                 <svg class="check-svg" viewBox="0 0 12 12"><polyline points="1.5 6 4.5 9 10.5 3"/></svg>
             </button>
             <div class="task-body">
-                <div class="task-text">${recurringBadge}${escHtml(task.text)}</div>
+                <div class="task-text">${recurringBadge}${escHtml(task.text)}${overPostponed && !task.done ? `<span class="postpone-badge">odloženo ${task.postponeCount}×</span>` : ''}</div>
                 ${reminderHtml}
             </div>
             <button class="task-delete" data-id="${task.id}" aria-label="Smazat">
@@ -1034,11 +1113,18 @@ function init() {
 
 document.addEventListener('DOMContentLoaded', init);
 
-// ── Service Worker registration ────────────────────────────
+// ── Service Worker registration + message handling ─────────
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').catch(err => {
             console.warn('SW registration failed:', err);
         });
+    });
+
+    // Handle action messages posted back from notification clicks
+    navigator.serviceWorker.addEventListener('message', e => {
+        const { type, taskId, hours } = e.data || {};
+        if (type === 'sw_task_done') toggleTask(taskId);
+        if (type === 'sw_snooze')    snoozeTask(taskId, hours);
     });
 }

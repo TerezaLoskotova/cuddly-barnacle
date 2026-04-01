@@ -13,8 +13,12 @@
     --success:   #22a06b;
     --success-bg:#e6f7f0;
     --danger:    #d94f4f;
+    --danger-bg: #fff2f2;
     --warning:   #e07d10;
     --warning-bg:#fff4e5;
+    --mint:      #1a9e7a;
+    --mint-bg:   #e8f8f3;
+    --mint-border:#a8e4d0;
     --radius:    12px;
     --shadow:    0 2px 12px rgba(0,0,0,.08);
 }
@@ -664,8 +668,40 @@ footer {
 .recurring-badge {
     display: inline-block;
     font-size: 0.75rem;
-    color: var(--primary);
+    color: var(--mint);
     margin-right: 5px;
+    font-weight: 700;
+    vertical-align: middle;
+}
+
+/* Task item — recurring variant (mint) */
+.task-item.is-recurring {
+    background: var(--mint-bg);
+    border-color: var(--mint-border);
+}
+.task-item.is-recurring.done {
+    background: #f0faf6;
+    border-color: transparent;
+}
+.task-item.is-recurring .task-check:hover { border-color: var(--mint); }
+.task-item.is-recurring.done .task-check  { background: var(--mint); border-color: var(--mint); }
+
+/* Task item — over-postponed (3+) variant */
+.task-item.over-postponed {
+    background: var(--danger-bg);
+    border-color: #ffc5c5;
+}
+.task-item.over-postponed .task-text { color: var(--danger); }
+
+/* Postpone count badge */
+.postpone-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    background: var(--danger);
+    color: #fff;
+    border-radius: 20px;
+    padding: 1px 7px;
+    margin-left: 6px;
     font-weight: 700;
     vertical-align: middle;
 }
@@ -680,8 +716,8 @@ footer {
 }
 
 .recurring-item {
-    background: var(--primary-light);
-    border: 1px solid #d4ccff;
+    background: var(--mint-bg);
+    border: 1px solid var(--mint-border);
     border-radius: 10px;
     padding: 10px 12px;
     display: flex;
@@ -705,13 +741,13 @@ footer {
 
 .recurring-meta {
     font-size: 0.78rem;
-    color: var(--primary);
+    color: var(--mint);
     margin-top: 2px;
 }
 .recurring-item.inactive .recurring-meta { color: var(--text-muted); }
 
-.recurring-toggle { color: var(--primary); }
-.recurring-toggle:hover { background: #d4ccff; }
+.recurring-toggle { color: var(--mint); }
+.recurring-toggle:hover { background: #c2ead9; }
 
 /* ── Day picker ────────────────────────────────────────── */
 .day-picker {
@@ -773,7 +809,7 @@ footer {
     border-radius: 10px;
     font-size: 0.9rem;
     font-weight: 500;
-    max-width: 340px;
+    max-width: 360px;
     width: calc(100% - 40px);
     text-align: center;
     box-shadow: 0 4px 20px rgba(0,0,0,.25);
@@ -785,6 +821,52 @@ footer {
 .inapp-alert.show {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
+}
+
+/* ── Snooze alert (richer, with buttons) ───────────────── */
+.snooze-alert {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    max-width: 360px;
+    width: calc(100% - 40px);
+    box-shadow: 0 6px 28px rgba(0,0,0,.18);
+    opacity: 0;
+    transition: opacity .3s, transform .3s;
+    z-index: 200;
+}
+.snooze-alert.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+.snooze-alert-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--warning);
+    margin-bottom: 4px;
+}
+.snooze-alert-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+.snooze-alert-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.snooze-alert-actions .btn {
+    flex: 1;
+    font-size: 0.82rem;
+    padding: 8px 10px;
 }
 
 /* ── Utilities ─────────────────────────────────────────── */

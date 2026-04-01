@@ -1,6 +1,6 @@
 {
-  "name": "Hlasový deník úkolů",
-  "short_name": "Deník",
+  "name": "Můj itinerář",
+  "short_name": "Itinerář",
   "description": "Diktuj úkoly, nápady a připomínky. Shrnutí dne každý večer.",
   "start_url": "/",
   "display": "standalone",
