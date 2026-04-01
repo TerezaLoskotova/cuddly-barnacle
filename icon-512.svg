@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="40" fill="#5b4fcf"/>
+  <!-- mic body -->
+  <rect x="76" y="30" width="40" height="72" rx="20" fill="white"/>
+  <!-- mic arc -->
+  <path d="M52 96 C52 130 140 130 140 96" stroke="white" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <!-- stand -->
+  <line x1="96" y1="130" x2="96" y2="155" stroke="white" stroke-width="8" stroke-linecap="round"/>
+  <line x1="72" y1="155" x2="120" y2="155" stroke="white" stroke-width="8" stroke-linecap="round"/>
+</svg>
