@@ -1,28 +1,53 @@
 /* ──────────────────────────────────────────────────────────
-   Hlasový deník úkolů — app.js
+   Můj itinerář — app.js
    ────────────────────────────────────────────────────────── */
 
-// ── State ─────────────────────────────────────────────────
-const state = {
-    tasks:          JSON.parse(localStorage.getItem('vd_tasks')     || '[]'),
-    notes:          JSON.parse(localStorage.getItem('vd_notes')     || '[]'),
-    recurring:      JSON.parse(localStorage.getItem('vd_recurring') || '[]'),
-    settings:       JSON.parse(localStorage.getItem('vd_settings')  || '{"summaryTime":"20:00"}'),
-    currentDate:    todayStr(),   // always reset to today on each app open
-    activeTab:      'tasks',      // 'tasks' | 'notes'
-    parsedVoice:    null,         // { text, reminder, type, days? }
-    reminderTimers: {},
-};
+// ── Global error handler (catches crashes before init) ─────
+window.addEventListener('error', ev => {
+    console.error('Global error:', ev.error);
+    document.body.innerHTML = `
+        <div style="padding:30px;font-family:sans-serif;max-width:500px;margin:0 auto">
+            <h2 style="color:#d94f4f">Chyba appky</h2>
+            <p style="color:#555;margin:12px 0">Prosím pošli mi tuto zprávu:</p>
+            <pre style="background:#f5f5f5;padding:14px;border-radius:8px;font-size:12px;overflow-wrap:break-word;white-space:pre-wrap">${ev.message}\n${ev.filename} : ${ev.lineno}\n${ev.error && ev.error.stack || ''}</pre>
+            <button onclick="localStorage.clear();location.reload()"
+                style="margin-top:16px;padding:12px 24px;background:#1d4ed8;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer">
+                Vymazat data a restartovat
+            </button>
+        </div>`;
+});
 
-// ── Helpers ────────────────────────────────────────────────
+// ── Helpers (defined first — used during state init) ───────
 function todayStr() {
-    // Use local date (not UTC) — important for CET/CEST timezone
     const now = new Date();
     const y   = now.getFullYear();
     const m   = String(now.getMonth() + 1).padStart(2, '0');
     const d   = String(now.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
 }
+
+function safeJSON(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+    } catch (e) {
+        console.warn(`localStorage "${key}" corrupt, resetting.`, e);
+        localStorage.removeItem(key);
+        return fallback;
+    }
+}
+
+// ── State ──────────────────────────────────────────────────
+const state = {
+    tasks:          safeJSON('vd_tasks',     []),
+    notes:          safeJSON('vd_notes',     []),
+    recurring:      safeJSON('vd_recurring', []),
+    settings:       safeJSON('vd_settings',  { summaryTime: '20:00' }),
+    currentDate:    todayStr(),
+    activeTab:      'tasks',
+    parsedVoice:    null,
+    reminderTimers: {},
+};
 
 function formatDate(dateStr) {
     const d = new Date(dateStr + 'T00:00:00');
