@@ -1233,17 +1233,19 @@ function init() {
     document.getElementById('tab-notes').addEventListener('click', () => switchTab('notes'));
 
     // Edit task modal
-    document.getElementById('save-edit-task').addEventListener('click', saveEditTask);
+    const bindEl = (id, event, fn) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(event, fn);
+    };
+    bindEl('save-edit-task', 'click', saveEditTask);
     ['cancel-edit-task', 'cancel-edit-task-2'].forEach(id => {
-        document.getElementById(id).addEventListener('click', () => {
-            document.getElementById('edit-task-modal').classList.add('hidden');
-        });
+        bindEl(id, 'click', () => document.getElementById('edit-task-modal').classList.add('hidden'));
     });
-    document.getElementById('edit-task-text').addEventListener('keydown', e => {
+    bindEl('edit-task-text', 'keydown', e => {
         if (e.key === 'Enter') saveEditTask();
         if (e.key === 'Escape') document.getElementById('edit-task-modal').classList.add('hidden');
     });
-    document.getElementById('edit-task-modal').addEventListener('click', e => {
+    bindEl('edit-task-modal', 'click', e => {
         if (e.target === e.currentTarget) document.getElementById('edit-task-modal').classList.add('hidden');
     });
 
