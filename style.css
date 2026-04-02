@@ -7,9 +7,9 @@
     --border:    #e8e5e0;
     --text:      #1a1916;
     --text-muted:#7a7670;
-    --primary:   #5b4fcf;
-    --primary-h: #4a3fbe;
-    --primary-light: #ede9ff;
+    --primary:   #1d4ed8;
+    --primary-h: #1e40af;
+    --primary-light: #dbeafe;
     --success:   #22a06b;
     --success-bg:#e6f7f0;
     --danger:    #d94f4f;
@@ -134,7 +134,7 @@ main {
     align-items: center;
     justify-content: center;
     transition: transform .15s, background .15s, box-shadow .15s;
-    box-shadow: 0 4px 20px rgba(91,79,207,.35);
+    box-shadow: 0 4px 20px rgba(29,78,216,.35);
 }
 
 .mic-button:hover {
@@ -445,14 +445,14 @@ footer {
 .btn-footer-secondary {
     background: var(--primary-light);
     color: var(--primary);
-    border: 1px solid #d4ccff;
+    border: 1px solid #bfdbfe;
     flex: 0 0 auto;
     padding: 13px 14px;
     border-radius: 10px;
     font-size: 0.88rem;
     font-weight: 600;
 }
-.btn-footer-secondary:hover { background: #ddd8ff; }
+.btn-footer-secondary:hover { background: #dbeafe; }
 
 /* ── Input ─────────────────────────────────────────────── */
 .input {
@@ -469,7 +469,7 @@ footer {
 }
 .input:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(91,79,207,.12);
+    box-shadow: 0 0 0 3px rgba(29,78,216,.12);
 }
 .input-time { width: auto; padding: 8px 10px; }
 
@@ -893,6 +893,94 @@ footer {
     flex: 1;
     font-size: 0.82rem;
     padding: 8px 10px;
+}
+
+/* ── Week strip ────────────────────────────────────────── */
+.week-strip {
+    display: flex;
+    gap: 4px;
+    padding: 10px 16px 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.week-strip::-webkit-scrollbar { display: none; }
+
+.wday {
+    flex: 1;
+    min-width: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 7px 4px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: none;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+}
+.wday:hover { background: var(--bg); }
+
+.wday.today { border-color: var(--primary); }
+
+.wday.selected {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.wday-name {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--text-muted);
+}
+.wday.selected .wday-name { color: rgba(255,255,255,.8); }
+.wday.today:not(.selected) .wday-name { color: var(--primary); }
+
+.wday-num {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+}
+.wday.selected .wday-num { color: #fff; }
+
+.wday-dot {
+    font-size: 0.62rem;
+    font-weight: 700;
+    background: var(--border);
+    color: var(--text-muted);
+    border-radius: 20px;
+    padding: 1px 5px;
+    line-height: 1.5;
+}
+.wday-dot.all-done { background: var(--success-bg); color: var(--success); }
+.wday.selected .wday-dot { background: rgba(255,255,255,.25); color: #fff; }
+
+/* ── Edit task button ──────────────────────────────────── */
+.task-edit {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    color: transparent;
+    transition: color .15s, background .15s;
+}
+.task-item:hover .task-edit { color: var(--text-muted); }
+.task-edit:hover { background: var(--primary-light); color: var(--primary) !important; }
+
+/* ── Edit priority label ───────────────────────────────── */
+.edit-priority-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
 }
 
 /* ── Utilities ─────────────────────────────────────────── */

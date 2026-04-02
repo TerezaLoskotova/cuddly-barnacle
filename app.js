@@ -388,17 +388,29 @@ function showInAppAlert(msg) {
 // ── Auto summary ───────────────────────────────────────────
 let summaryCheckInterval = null;
 
+function checkAndShowSummary() {
+    const today = todayStr();
+    if (state.currentDate !== today) return;
+    if (state.settings.lastSummaryDate === today) return; // already shown today
+
+    const now = new Date();
+    const hh  = String(now.getHours()).padStart(2,'0');
+    const mm  = String(now.getMinutes()).padStart(2,'0');
+    const cur = `${hh}:${mm}`;
+
+    // Show if current time is at or past the configured summary time
+    if (cur >= state.settings.summaryTime) {
+        state.settings.lastSummaryDate = today;
+        save();
+        openSummaryModal();
+    }
+}
+
 function startSummaryCheck() {
     if (summaryCheckInterval) clearInterval(summaryCheckInterval);
-    summaryCheckInterval = setInterval(() => {
-        const now    = new Date();
-        const hh     = String(now.getHours()).padStart(2,'0');
-        const mm     = String(now.getMinutes()).padStart(2,'0');
-        const curStr = `${hh}:${mm}`;
-        if (curStr === state.settings.summaryTime && state.currentDate === todayStr()) {
-            openSummaryModal();
-        }
-    }, 30_000); // check every 30 s
+    checkAndShowSummary();                          // check immediately on (re)open
+    summaryCheckInterval = setInterval(checkAndShowSummary, 60_000); // then every minute
+}
 }
 
 // ── CRUD – Tasks ───────────────────────────────────────────
@@ -423,7 +435,7 @@ function addTask(text, reminder, date, recurringId, priority) {
 
 function toggleTask(id) {
     const t = state.tasks.find(x => x.id === id);
-    if (t) { t.done = !t.done; save(); renderTasks(); }
+    if (t) { t.done = !t.done; save(); renderTasks(); renderWeekStrip(); }
 }
 
 function togglePriority(id) {
@@ -436,6 +448,40 @@ function deleteTask(id) {
     state.tasks = state.tasks.filter(x => x.id !== id);
     save();
     renderTasks();
+    renderWeekStrip();
+}
+
+function openEditTask(id) {
+    const t = state.tasks.find(x => x.id === id);
+    if (!t) return;
+    document.getElementById('edit-task-id').value      = id;
+    document.getElementById('edit-task-text').value    = t.text;
+    document.getElementById('edit-task-time').value    = t.reminder || '';
+    document.getElementById('edit-task-priority').checked = !!t.priority;
+    document.getElementById('edit-task-modal').classList.remove('hidden');
+    document.getElementById('edit-task-text').focus();
+}
+
+function saveEditTask() {
+    const id       = document.getElementById('edit-task-id').value;
+    const text     = document.getElementById('edit-task-text').value.trim();
+    const reminder = document.getElementById('edit-task-time').value || null;
+    const priority = document.getElementById('edit-task-priority').checked;
+    if (!text) return;
+
+    const t = state.tasks.find(x => x.id === id);
+    if (!t) return;
+
+    // Reschedule if reminder changed
+    if (state.reminderTimers[id]) clearTimeout(state.reminderTimers[id]);
+    t.text          = text;
+    t.reminder      = reminder;
+    t.reminderFired = reminder ? (t.reminderFired && t.reminder === reminder) : false;
+    t.priority      = priority;
+    save();
+    if (t.date === todayStr()) scheduleReminder(t);
+    renderTasks();
+    document.getElementById('edit-task-modal').classList.add('hidden');
 }
 
 // ── CRUD – Notes ───────────────────────────────────────────
@@ -617,6 +663,48 @@ function renderDateNav() {
         isToday ? `Dnes — ${formatDate(state.currentDate)}` : formatDate(state.currentDate);
 }
 
+// ── Render: Week strip (7 days) ────────────────────────────
+function renderWeekStrip() {
+    const strip = document.getElementById('week-strip');
+    if (!strip) return;
+    strip.innerHTML = '';
+
+    for (let i = 6; i >= 0; i--) {
+        const date       = addDays(todayStr(), -i);
+        const d          = new Date(date + 'T00:00:00');
+        const isToday    = date === todayStr();
+        const isSelected = date === state.currentDate;
+
+        const dayTasks  = state.tasks.filter(t => t.date === date);
+        const total     = dayTasks.length;
+        const done      = dayTasks.filter(t => t.done).length;
+
+        let dotHtml = '';
+        if (total > 0) {
+            const allDone = done === total;
+            dotHtml = `<span class="wday-dot${allDone ? ' all-done' : ''}">${done}/${total}</span>`;
+        }
+
+        const btn = document.createElement('button');
+        btn.className = `wday${isSelected ? ' selected' : ''}${isToday ? ' today' : ''}`;
+        btn.dataset.date = date;
+        btn.innerHTML = `
+            <span class="wday-name">${DAY_NAMES_SHORT[d.getDay()]}</span>
+            <span class="wday-num">${d.getDate()}</span>
+            ${dotHtml}
+        `;
+        btn.addEventListener('click', () => {
+            state.currentDate = date;
+            renderDateNav();
+            renderTasks();
+            renderNotes();
+            renderWeekStrip();
+            document.getElementById('go-today-btn').classList.toggle('hidden', isToday);
+        });
+        strip.appendChild(btn);
+    }
+}
+
 // ── Render: Tasks ──────────────────────────────────────────
 function renderTasks() {
     const list   = document.getElementById('task-list');
@@ -688,6 +776,12 @@ function renderTasks() {
                 ${reminderHtml}
             </div>
             <button class="star-btn${task.priority ? ' active' : ''}" data-id="${task.id}" aria-label="Priorita">${starFilled}</button>
+            <button class="task-edit" data-id="${task.id}" aria-label="Upravit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+            </button>
             <button class="task-delete" data-id="${task.id}" aria-label="Smazat">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"/>
@@ -700,9 +794,12 @@ function renderTasks() {
         list.appendChild(li);
     });
 
-    // Delegate events — star, check, delete
+    // Delegate events — star, edit, check, delete
     list.querySelectorAll('.star-btn').forEach(btn => {
         btn.addEventListener('click', () => togglePriority(btn.dataset.id));
+    });
+    list.querySelectorAll('.task-edit').forEach(btn => {
+        btn.addEventListener('click', () => openEditTask(btn.dataset.id));
     });
     list.querySelectorAll('.task-check').forEach(btn => {
         btn.addEventListener('click', () => toggleTask(btn.dataset.id));
@@ -980,7 +1077,8 @@ function closeSettingsModal() {
 }
 
 function saveSettings() {
-    state.settings.summaryTime = document.getElementById('summary-time-input').value || '20:00';
+    state.settings.summaryTime     = document.getElementById('summary-time-input').value || '20:00';
+    state.settings.lastSummaryDate = null; // reset so new time can fire today
     save();
     closeSettingsModal();
     startSummaryCheck();
@@ -1053,17 +1151,17 @@ function checkNotificationPermission() {
 function navigateDate(delta) {
     state.currentDate = addDays(state.currentDate, delta);
     renderDateNav();
+    renderWeekStrip();
     renderTasks();
     renderNotes();
-    // Show/hide "go to today" hint
-    const isToday = state.currentDate === todayStr();
-    document.getElementById('go-today-btn').classList.toggle('hidden', isToday);
+    document.getElementById('go-today-btn').classList.toggle('hidden', state.currentDate === todayStr());
 }
 
 // ── Init ───────────────────────────────────────────────────
 function init() {
-    spawnRecurringTasks();   // create today's instances before rendering
+    spawnRecurringTasks();
     renderDateNav();
+    renderWeekStrip();
     renderTasks();
     renderNotes();
     scheduleAllReminders();
@@ -1124,6 +1222,21 @@ function init() {
     // Tab switching
     document.getElementById('tab-tasks').addEventListener('click', () => switchTab('tasks'));
     document.getElementById('tab-notes').addEventListener('click', () => switchTab('notes'));
+
+    // Edit task modal
+    document.getElementById('save-edit-task').addEventListener('click', saveEditTask);
+    ['cancel-edit-task', 'cancel-edit-task-2'].forEach(id => {
+        document.getElementById(id).addEventListener('click', () => {
+            document.getElementById('edit-task-modal').classList.add('hidden');
+        });
+    });
+    document.getElementById('edit-task-text').addEventListener('keydown', e => {
+        if (e.key === 'Enter') saveEditTask();
+        if (e.key === 'Escape') document.getElementById('edit-task-modal').classList.add('hidden');
+    });
+    document.getElementById('edit-task-modal').addEventListener('click', e => {
+        if (e.target === e.currentTarget) document.getElementById('edit-task-modal').classList.add('hidden');
+    });
 
     // Summary button
     document.getElementById('summary-btn').addEventListener('click', openSummaryModal);

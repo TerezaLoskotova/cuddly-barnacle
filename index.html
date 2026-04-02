@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#5b4fcf">
+    <meta name="theme-color" content="#1d4ed8">
     <meta name="description" content="Hlasový deník — diktuj úkoly, nápady a připomínky">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -43,6 +43,8 @@
                 </button>
             </div>
             <button id="go-today-btn" class="btn btn-small btn-outline go-today hidden">Zpět na dnes</button>
+            <!-- ── Week strip ── -->
+            <div id="week-strip" class="week-strip"></div>
         </header>
 
         <!-- ── Notification permission banner ── -->
@@ -305,6 +307,41 @@
                     <button id="confirm-recurring" class="btn btn-primary">Přidat</button>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Edit task modal ── -->
+    <div id="edit-task-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Upravit úkol</h2>
+                <button id="cancel-edit-task" class="icon-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-task-id">
+                <div class="form-row">
+                    <input type="text" id="edit-task-text" class="input" placeholder="Název úkolu…" />
+                </div>
+                <div class="form-row form-row-split">
+                    <label>
+                        Připomínka v:
+                        <input type="time" id="edit-task-time" class="input input-time" />
+                    </label>
+                    <label class="edit-priority-label">
+                        <input type="checkbox" id="edit-task-priority">
+                        Priorita ⭐
+                    </label>
+                </div>
+                <div class="form-actions" style="margin-top:14px">
+                    <button id="save-edit-task" class="btn btn-primary">Uložit</button>
+                    <button id="cancel-edit-task-2" class="btn btn-ghost">Zrušit</button>
+                </div>
             </div>
         </div>
     </div>
