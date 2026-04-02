@@ -432,23 +432,19 @@ function checkAndShowSummary() {
     const mm  = String(now.getMinutes()).padStart(2,'0');
     const cur = `${hh}:${mm}`;
 
-    // Show if current time is within 2 hours after the configured summary time
+    // Show if current time is at or past the configured summary time
     if (cur >= state.settings.summaryTime) {
         state.settings.lastSummaryDate = today;
         save();
-        const [sh, sm] = state.settings.summaryTime.split(':').map(Number);
-        const summaryMin = sh * 60 + sm;
-        const currentMin = now.getHours() * 60 + now.getMinutes();
-        if (currentMin - summaryMin <= 120) {
-            openSummaryModal();
-        }
+        openSummaryModal();
     }
 }
 
 function startSummaryCheck() {
     if (summaryCheckInterval) clearInterval(summaryCheckInterval);
-    checkAndShowSummary();                          // check immediately on (re)open
-    summaryCheckInterval = setInterval(checkAndShowSummary, 60_000); // then every minute
+    // Do NOT check immediately on page load — only fire from interval
+    // (prevents modal from blocking UI every time app is opened after 20:00)
+    summaryCheckInterval = setInterval(checkAndShowSummary, 60_000);
 }
 
 // ── CRUD – Tasks ───────────────────────────────────────────
