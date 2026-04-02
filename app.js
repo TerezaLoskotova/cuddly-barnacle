@@ -1,53 +1,23 @@
 /* ──────────────────────────────────────────────────────────
-   Můj itinerář — app.js
+   Hlasový deník úkolů — app.js
    ────────────────────────────────────────────────────────── */
 
-// ── Global error handler (catches crashes before init) ─────
-window.addEventListener('error', ev => {
-    console.error('Global error:', ev.error);
-    document.body.innerHTML = `
-        <div style="padding:30px;font-family:sans-serif;max-width:500px;margin:0 auto">
-            <h2 style="color:#d94f4f">Chyba appky</h2>
-            <p style="color:#555;margin:12px 0">Prosím pošli mi tuto zprávu:</p>
-            <pre style="background:#f5f5f5;padding:14px;border-radius:8px;font-size:12px;overflow-wrap:break-word;white-space:pre-wrap">${ev.message}\n${ev.filename} : ${ev.lineno}\n${ev.error && ev.error.stack || ''}</pre>
-            <button onclick="localStorage.clear();location.reload()"
-                style="margin-top:16px;padding:12px 24px;background:#1d4ed8;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer">
-                Vymazat data a restartovat
-            </button>
-        </div>`;
-});
-
-// ── Helpers (defined first — used during state init) ───────
-function todayStr() {
-    const now = new Date();
-    const y   = now.getFullYear();
-    const m   = String(now.getMonth() + 1).padStart(2, '0');
-    const d   = String(now.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-}
-
-function safeJSON(key, fallback) {
-    try {
-        const raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : fallback;
-    } catch (e) {
-        console.warn(`localStorage "${key}" corrupt, resetting.`, e);
-        localStorage.removeItem(key);
-        return fallback;
-    }
-}
-
-// ── State ──────────────────────────────────────────────────
+// ── State ─────────────────────────────────────────────────
 const state = {
-    tasks:          safeJSON('vd_tasks',     []),
-    notes:          safeJSON('vd_notes',     []),
-    recurring:      safeJSON('vd_recurring', []),
-    settings:       safeJSON('vd_settings',  { summaryTime: '20:00' }),
-    currentDate:    todayStr(),
-    activeTab:      'tasks',
-    parsedVoice:    null,
+    tasks:          JSON.parse(localStorage.getItem('vd_tasks')     || '[]'),
+    notes:          JSON.parse(localStorage.getItem('vd_notes')     || '[]'),
+    recurring:      JSON.parse(localStorage.getItem('vd_recurring') || '[]'),
+    settings:       JSON.parse(localStorage.getItem('vd_settings')  || '{"summaryTime":"20:00"}'),
+    currentDate:    todayStr(),   // YYYY-MM-DD string being viewed
+    activeTab:      'tasks',      // 'tasks' | 'notes'
+    parsedVoice:    null,         // { text, reminder, type, days? }
     reminderTimers: {},
 };
+
+// ── Helpers ────────────────────────────────────────────────
+function todayStr() {
+    return new Date().toISOString().slice(0, 10);
+}
 
 function formatDate(dateStr) {
     const d = new Date(dateStr + 'T00:00:00');
@@ -58,13 +28,9 @@ function formatDate(dateStr) {
 }
 
 function addDays(dateStr, n) {
-    const d  = new Date(dateStr + 'T00:00:00');
+    const d = new Date(dateStr + 'T00:00:00');
     d.setDate(d.getDate() + n);
-    // Return local date string (not UTC via toISOString)
-    const y  = d.getFullYear();
-    const m  = String(d.getMonth() + 1).padStart(2, '0');
-    const da = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${da}`;
+    return d.toISOString().slice(0, 10);
 }
 
 function uid() {
@@ -442,8 +408,6 @@ function checkAndShowSummary() {
 
 function startSummaryCheck() {
     if (summaryCheckInterval) clearInterval(summaryCheckInterval);
-    // Do NOT check immediately on page load — only fire from interval
-    // (prevents modal from blocking UI every time app is opened after 20:00)
     summaryCheckInterval = setInterval(checkAndShowSummary, 60_000);
 }
 
@@ -1258,19 +1222,17 @@ function init() {
     document.getElementById('tab-notes').addEventListener('click', () => switchTab('notes'));
 
     // Edit task modal
-    const bindEl = (id, event, fn) => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener(event, fn);
-    };
-    bindEl('save-edit-task', 'click', saveEditTask);
+    document.getElementById('save-edit-task').addEventListener('click', saveEditTask);
     ['cancel-edit-task', 'cancel-edit-task-2'].forEach(id => {
-        bindEl(id, 'click', () => document.getElementById('edit-task-modal').classList.add('hidden'));
+        document.getElementById(id).addEventListener('click', () => {
+            document.getElementById('edit-task-modal').classList.add('hidden');
+        });
     });
-    bindEl('edit-task-text', 'keydown', e => {
+    document.getElementById('edit-task-text').addEventListener('keydown', e => {
         if (e.key === 'Enter') saveEditTask();
         if (e.key === 'Escape') document.getElementById('edit-task-modal').classList.add('hidden');
     });
-    bindEl('edit-task-modal', 'click', e => {
+    document.getElementById('edit-task-modal').addEventListener('click', e => {
         if (e.target === e.currentTarget) document.getElementById('edit-task-modal').classList.add('hidden');
     });
 
@@ -1346,24 +1308,7 @@ function init() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    try {
-        init();
-    } catch (err) {
-        console.error('Init crash:', err);
-        document.body.innerHTML = `
-            <div style="padding:30px;font-family:sans-serif;max-width:500px;margin:0 auto">
-                <h2 style="color:#d94f4f">Chyba při spuštění appky</h2>
-                <p style="color:#555;margin:12px 0">Prosím sdílej tuto zprávu:</p>
-                <pre style="background:#f5f5f5;padding:14px;border-radius:8px;font-size:13px;overflow-wrap:break-word;white-space:pre-wrap">${err.name}: ${err.message}
-${err.stack || ''}</pre>
-                <button onclick="localStorage.clear();location.reload()"
-                    style="margin-top:16px;padding:12px 24px;background:#1d4ed8;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer">
-                    Vymazat data a restartovat
-                </button>
-            </div>`;
-    }
-});
+document.addEventListener('DOMContentLoaded', init);
 
 // ── Service Worker registration + message handling ─────────
 if ('serviceWorker' in navigator) {
