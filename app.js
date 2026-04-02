@@ -445,7 +445,6 @@ function startSummaryCheck() {
     checkAndShowSummary();                          // check immediately on (re)open
     summaryCheckInterval = setInterval(checkAndShowSummary, 60_000); // then every minute
 }
-}
 
 // ── CRUD – Tasks ───────────────────────────────────────────
 function addTask(text, reminder, date, recurringId, priority) {
