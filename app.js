@@ -8,7 +8,7 @@ const state = {
     notes:          JSON.parse(localStorage.getItem('vd_notes')     || '[]'),
     recurring:      JSON.parse(localStorage.getItem('vd_recurring') || '[]'),
     settings:       JSON.parse(localStorage.getItem('vd_settings')  || '{"summaryTime":"20:00"}'),
-    currentDate:    todayStr(),   // YYYY-MM-DD string being viewed
+    currentDate:    todayStr(),   // always reset to today on each app open
     activeTab:      'tasks',      // 'tasks' | 'notes'
     parsedVoice:    null,         // { text, reminder, type, days? }
     reminderTimers: {},
@@ -16,7 +16,12 @@ const state = {
 
 // ── Helpers ────────────────────────────────────────────────
 function todayStr() {
-    return new Date().toISOString().slice(0, 10);
+    // Use local date (not UTC) — important for CET/CEST timezone
+    const now = new Date();
+    const y   = now.getFullYear();
+    const m   = String(now.getMonth() + 1).padStart(2, '0');
+    const d   = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
 }
 
 function formatDate(dateStr) {
@@ -28,9 +33,13 @@ function formatDate(dateStr) {
 }
 
 function addDays(dateStr, n) {
-    const d = new Date(dateStr + 'T00:00:00');
+    const d  = new Date(dateStr + 'T00:00:00');
     d.setDate(d.getDate() + n);
-    return d.toISOString().slice(0, 10);
+    // Return local date string (not UTC via toISOString)
+    const y  = d.getFullYear();
+    const m  = String(d.getMonth() + 1).padStart(2, '0');
+    const da = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${da}`;
 }
 
 function uid() {
