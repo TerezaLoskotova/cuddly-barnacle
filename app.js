@@ -1321,7 +1321,24 @@ function init() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        init();
+    } catch (err) {
+        console.error('Init crash:', err);
+        document.body.innerHTML = `
+            <div style="padding:30px;font-family:sans-serif;max-width:500px;margin:0 auto">
+                <h2 style="color:#d94f4f">Chyba při spuštění appky</h2>
+                <p style="color:#555;margin:12px 0">Prosím sdílej tuto zprávu:</p>
+                <pre style="background:#f5f5f5;padding:14px;border-radius:8px;font-size:13px;overflow-wrap:break-word;white-space:pre-wrap">${err.name}: ${err.message}
+${err.stack || ''}</pre>
+                <button onclick="localStorage.clear();location.reload()"
+                    style="margin-top:16px;padding:12px 24px;background:#1d4ed8;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer">
+                    Vymazat data a restartovat
+                </button>
+            </div>`;
+    }
+});
 
 // ── Service Worker registration + message handling ─────────
 if ('serviceWorker' in navigator) {
