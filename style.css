@@ -957,6 +957,29 @@ footer {
 }
 .wday-dot.all-done { background: var(--success-bg); color: var(--success); }
 .wday.selected .wday-dot { background: rgba(255,255,255,.25); color: #fff; }
+.wday.future .wday-name { color: var(--primary); opacity: .7; }
+.wday.future .wday-num  { color: var(--primary); opacity: .7; }
+.wday-dot.future { background: var(--primary-light); color: var(--primary); }
+
+/* ── Undo alert ─────────────────────────────────────────────── */
+.undo-alert {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    pointer-events: all;
+}
+.undo-btn {
+    background: #fff;
+    color: #1a1916;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
 
 /* ── Tomorrow / Edit task buttons ─────────────────────────── */
 .task-tomorrow, .task-edit {

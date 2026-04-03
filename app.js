@@ -448,12 +448,45 @@ function togglePriority(id) {
     if (t) { t.priority = !t.priority; save(); renderTasks(); }
 }
 
+let lastDeletedTask = null;
+
 function deleteTask(id) {
     if (state.reminderTimers[id]) clearTimeout(state.reminderTimers[id]);
+    lastDeletedTask = state.tasks.find(x => x.id === id) || null;
     state.tasks = state.tasks.filter(x => x.id !== id);
     save();
     renderTasks();
     renderWeekStrip();
+    if (lastDeletedTask) showUndoAlert();
+}
+
+function undoDelete() {
+    if (!lastDeletedTask) return;
+    state.tasks.push(lastDeletedTask);
+    lastDeletedTask = null;
+    save();
+    renderTasks();
+    renderWeekStrip();
+}
+
+function showUndoAlert() {
+    const old = document.getElementById('undo-alert');
+    if (old) old.remove();
+
+    const el = document.createElement('div');
+    el.id = 'undo-alert';
+    el.className = 'inapp-alert undo-alert';
+    el.innerHTML = `Úkol smazán &nbsp;<button class="undo-btn">Vrátit</button>`;
+    el.querySelector('.undo-btn').addEventListener('click', () => {
+        undoDelete();
+        el.remove();
+    });
+    document.body.appendChild(el);
+    setTimeout(() => el.classList.add('show'), 10);
+    setTimeout(() => {
+        el.classList.remove('show');
+        setTimeout(() => { if (el.parentNode) el.remove(); }, 400);
+    }, 5000);
 }
 
 function moveToNextDay(id) {
@@ -684,30 +717,33 @@ function renderDateNav() {
         isToday ? `Dnes — ${formatDate(state.currentDate)}` : formatDate(state.currentDate);
 }
 
-// ── Render: Week strip (7 days) ────────────────────────────
+// ── Render: Week strip (6 past + today + 7 future = 14 days) ──
 function renderWeekStrip() {
     const strip = document.getElementById('week-strip');
     if (!strip) return;
     strip.innerHTML = '';
 
-    for (let i = 6; i >= 0; i--) {
-        const date       = addDays(todayStr(), -i);
+    let todayBtn = null;
+
+    for (let i = -6; i <= 7; i++) {
+        const date       = addDays(todayStr(), i);
         const d          = new Date(date + 'T00:00:00');
         const isToday    = date === todayStr();
         const isSelected = date === state.currentDate;
+        const isFuture   = i > 0;
 
-        const dayTasks  = state.tasks.filter(t => t.date === date);
-        const total     = dayTasks.length;
-        const done      = dayTasks.filter(t => t.done).length;
+        const dayTasks = state.tasks.filter(t => t.date === date);
+        const total    = dayTasks.length;
+        const done     = dayTasks.filter(t => t.done).length;
 
         let dotHtml = '';
         if (total > 0) {
             const allDone = done === total;
-            dotHtml = `<span class="wday-dot${allDone ? ' all-done' : ''}">${done}/${total}</span>`;
+            dotHtml = `<span class="wday-dot${allDone ? ' all-done' : ''}${isFuture ? ' future' : ''}">${done}/${total}</span>`;
         }
 
         const btn = document.createElement('button');
-        btn.className = `wday${isSelected ? ' selected' : ''}${isToday ? ' today' : ''}`;
+        btn.className = `wday${isSelected ? ' selected' : ''}${isToday ? ' today' : ''}${isFuture ? ' future' : ''}`;
         btn.dataset.date = date;
         btn.innerHTML = `
             <span class="wday-name">${DAY_NAMES_SHORT[d.getDay()]}</span>
@@ -723,6 +759,12 @@ function renderWeekStrip() {
             document.getElementById('go-today-btn').classList.toggle('hidden', isToday);
         });
         strip.appendChild(btn);
+        if (isToday) todayBtn = btn;
+    }
+
+    // Scroll today into view (centered)
+    if (todayBtn) {
+        setTimeout(() => todayBtn.scrollIntoView({ inline: 'center', behavior: 'instant' }), 0);
     }
 }
 
