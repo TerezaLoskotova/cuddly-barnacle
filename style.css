@@ -958,8 +958,8 @@ footer {
 .wday-dot.all-done { background: var(--success-bg); color: var(--success); }
 .wday.selected .wday-dot { background: rgba(255,255,255,.25); color: #fff; }
 
-/* ── Edit task button ──────────────────────────────────── */
-.task-edit {
+/* ── Tomorrow / Edit task buttons ─────────────────────────── */
+.task-tomorrow, .task-edit {
     flex-shrink: 0;
     background: none;
     border: none;
@@ -969,6 +969,8 @@ footer {
     color: transparent;
     transition: color .15s, background .15s;
 }
+.task-item:hover .task-tomorrow { color: var(--text-muted); }
+.task-tomorrow:hover { background: var(--success-bg); color: var(--success) !important; }
 .task-item:hover .task-edit { color: var(--text-muted); }
 .task-edit:hover { background: var(--primary-light); color: var(--primary) !important; }
 

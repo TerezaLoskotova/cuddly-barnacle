@@ -456,12 +456,25 @@ function deleteTask(id) {
     renderWeekStrip();
 }
 
+function moveToNextDay(id) {
+    const t = state.tasks.find(x => x.id === id);
+    if (!t) return;
+    t.date = addDays(t.date, 1);
+    t.reminderFired = false;
+    t.postponeCount = (t.postponeCount || 0) + 1;
+    save();
+    renderTasks();
+    renderWeekStrip();
+    showInAppAlert('Úkol přesunut na ' + formatDate(t.date));
+}
+
 function openEditTask(id) {
     const t = state.tasks.find(x => x.id === id);
     if (!t) return;
-    document.getElementById('edit-task-id').value      = id;
-    document.getElementById('edit-task-text').value    = t.text;
-    document.getElementById('edit-task-time').value    = t.reminder || '';
+    document.getElementById('edit-task-id').value         = id;
+    document.getElementById('edit-task-text').value       = t.text;
+    document.getElementById('edit-task-time').value       = t.reminder || '';
+    document.getElementById('edit-task-date').value       = t.date || todayStr();
     document.getElementById('edit-task-priority').checked = !!t.priority;
     document.getElementById('edit-task-modal').classList.remove('hidden');
     document.getElementById('edit-task-text').focus();
@@ -471,6 +484,7 @@ function saveEditTask() {
     const id       = document.getElementById('edit-task-id').value;
     const text     = document.getElementById('edit-task-text').value.trim();
     const reminder = document.getElementById('edit-task-time').value || null;
+    const date     = document.getElementById('edit-task-date').value || todayStr();
     const priority = document.getElementById('edit-task-priority').checked;
     if (!text) return;
 
@@ -481,11 +495,13 @@ function saveEditTask() {
     if (state.reminderTimers[id]) clearTimeout(state.reminderTimers[id]);
     t.text          = text;
     t.reminder      = reminder;
+    t.date          = date;
     t.reminderFired = reminder ? (t.reminderFired && t.reminder === reminder) : false;
     t.priority      = priority;
     save();
     if (t.date === todayStr()) scheduleReminder(t);
     renderTasks();
+    renderWeekStrip();
     document.getElementById('edit-task-modal').classList.add('hidden');
 }
 
@@ -781,6 +797,11 @@ function renderTasks() {
                 ${reminderHtml}
             </div>
             <button class="star-btn${task.priority ? ' active' : ''}" data-id="${task.id}" aria-label="Priorita">${starFilled}</button>
+            <button class="task-tomorrow" data-id="${task.id}" aria-label="Přesunout na zítra" title="Přesunout na zítra">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </button>
             <button class="task-edit" data-id="${task.id}" aria-label="Upravit">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -802,6 +823,9 @@ function renderTasks() {
     // Delegate events — star, edit, check, delete
     list.querySelectorAll('.star-btn').forEach(btn => {
         btn.addEventListener('click', () => togglePriority(btn.dataset.id));
+    });
+    list.querySelectorAll('.task-tomorrow').forEach(btn => {
+        btn.addEventListener('click', () => moveToNextDay(btn.dataset.id));
     });
     list.querySelectorAll('.task-edit').forEach(btn => {
         btn.addEventListener('click', () => openEditTask(btn.dataset.id));
