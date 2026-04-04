@@ -1130,6 +1130,76 @@ function closeSummaryModal() {
     document.getElementById('summary-modal').classList.add('hidden');
 }
 
+// ── Search ─────────────────────────────────────────────────
+function openSearchModal() {
+    document.getElementById('search-modal').classList.remove('hidden');
+    const inp = document.getElementById('search-input');
+    inp.value = '';
+    inp.focus();
+    renderSearchResults('');
+}
+
+function closeSearchModal() {
+    document.getElementById('search-modal').classList.add('hidden');
+}
+
+function renderSearchResults(query) {
+    const list  = document.getElementById('search-results');
+    const empty = document.getElementById('search-empty');
+    list.innerHTML = '';
+
+    if (!query.trim()) { empty.classList.add('hidden'); return; }
+
+    const q = query.toLowerCase();
+
+    const taskHits = state.tasks.filter(t =>
+        t.text.toLowerCase().includes(q)
+    );
+    const noteHits = state.notes.filter(n =>
+        n.text.toLowerCase().includes(q)
+    );
+
+    if (taskHits.length === 0 && noteHits.length === 0) {
+        empty.classList.remove('hidden');
+        return;
+    }
+    empty.classList.add('hidden');
+
+    const allHits = [
+        ...taskHits.map(t => ({ ...t, _kind: 'task' })),
+        ...noteHits.map(n => ({ ...n, _kind: 'note' })),
+    ].sort((a, b) => (a.date > b.date ? 1 : -1));
+
+    allHits.forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'search-result-item';
+        const isToday = item.date === todayStr();
+        const dateLabel = isToday ? 'Dnes' : formatDate(item.date);
+        const icon = item._kind === 'note' ? '✏️' : (item.done ? '✓' : '○');
+        const textHighlighted = escHtml(item.text).replace(
+            new RegExp(escHtml(query), 'gi'),
+            m => `<mark>${m}</mark>`
+        );
+        li.innerHTML = `
+            <span class="sr-icon">${icon}</span>
+            <span class="sr-body">
+                <span class="sr-text">${textHighlighted}</span>
+                <span class="sr-date">${dateLabel}</span>
+            </span>
+        `;
+        li.addEventListener('click', () => {
+            state.currentDate = item.date;
+            renderDateNav();
+            renderWeekStrip();
+            renderTasks();
+            renderNotes();
+            document.getElementById('go-today-btn').classList.toggle('hidden', item.date === todayStr());
+            closeSearchModal();
+        });
+        list.appendChild(li);
+    });
+}
+
 // ── Settings modal ─────────────────────────────────────────
 function openSettingsModal() {
     document.getElementById('summary-time-input').value = state.settings.summaryTime;
@@ -1312,6 +1382,16 @@ function init() {
     document.getElementById('close-summary').addEventListener('click', closeSummaryModal);
     document.getElementById('rollover-btn').addEventListener('click', rolloverPendingTasks);
     document.getElementById('dismiss-btn').addEventListener('click',  closeSummaryModal);
+
+    // Search
+    document.getElementById('search-btn').addEventListener('click', openSearchModal);
+    document.getElementById('close-search').addEventListener('click', closeSearchModal);
+    document.getElementById('search-modal').addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeSearchModal();
+    });
+    document.getElementById('search-input').addEventListener('input', e => {
+        renderSearchResults(e.target.value);
+    });
 
     // Settings
     document.getElementById('settings-btn').addEventListener('click', openSettingsModal);

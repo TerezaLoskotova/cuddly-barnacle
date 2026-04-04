@@ -1006,6 +1006,41 @@ footer {
 .task-item:hover .task-edit { color: var(--text-muted); }
 .task-edit:hover { background: var(--primary-light); color: var(--primary) !important; }
 
+/* ── Search ────────────────────────────────────────────────── */
+.search-modal-inner { max-height: 80dvh; }
+
+.search-results {
+    list-style: none;
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 55dvh;
+    overflow-y: auto;
+}
+
+.search-result-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+}
+.search-result-item:hover { background: var(--primary-light); border-color: var(--primary); }
+
+.sr-icon { font-size: 1rem; flex-shrink: 0; padding-top: 1px; }
+
+.sr-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.sr-text { font-size: 0.92rem; word-break: break-word; }
+.sr-text mark { background: #fef08a; border-radius: 3px; padding: 0 2px; }
+
+.sr-date { font-size: 0.76rem; color: var(--text-muted); }
+
 /* ── Edit priority label ───────────────────────────────── */
 .edit-priority-label {
     display: flex;

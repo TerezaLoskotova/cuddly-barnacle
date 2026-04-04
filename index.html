@@ -35,6 +35,12 @@
                         </svg>
                     </button>
                 </div>
+                <button id="search-btn" class="icon-btn" title="Hledat">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                </button>
                 <button id="settings-btn" class="icon-btn" title="Nastavení">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"/>
@@ -349,6 +355,25 @@
                     <button id="cancel-edit-task-2" class="btn btn-ghost">Zrušit</button>
                     <button id="delete-edit-task" class="btn btn-delete-task">🗑 Smazat</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Search modal ── -->
+    <div id="search-modal" class="modal-overlay hidden">
+        <div class="modal search-modal-inner">
+            <div class="modal-header">
+                <h2>Hledat</h2>
+                <button id="close-search" class="icon-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" style="padding-top:8px">
+                <input type="search" id="search-input" class="input" placeholder="Hledat v úkolech a nápadech…" autocomplete="off" />
+                <ul id="search-results" class="search-results"></ul>
+                <p id="search-empty" class="summary-empty hidden" style="margin-top:12px">Nic nenalezeno.</p>
             </div>
         </div>
     </div>
