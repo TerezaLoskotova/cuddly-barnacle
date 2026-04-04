@@ -981,6 +981,15 @@ footer {
     white-space: nowrap;
 }
 
+/* ── Delete button in edit modal ───────────────────────────── */
+.btn-delete-task {
+    background: none;
+    color: var(--danger);
+    border: 1px solid #ffc5c5;
+    margin-left: auto;
+}
+.btn-delete-task:hover { background: var(--danger-bg); }
+
 /* ── Tomorrow / Edit task buttons ─────────────────────────── */
 .task-tomorrow, .task-edit {
     flex-shrink: 0;

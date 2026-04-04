@@ -452,7 +452,8 @@ let lastDeletedTask = null;
 
 function deleteTask(id) {
     if (state.reminderTimers[id]) clearTimeout(state.reminderTimers[id]);
-    lastDeletedTask = state.tasks.find(x => x.id === id) || null;
+    const found = state.tasks.find(x => x.id === id);
+    lastDeletedTask = found ? JSON.parse(JSON.stringify(found)) : null;
     state.tasks = state.tasks.filter(x => x.id !== id);
     save();
     renderTasks();
@@ -850,19 +851,11 @@ function renderTasks() {
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
             </button>
-            <button class="task-delete" data-id="${task.id}" aria-label="Smazat">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                    <path d="M10 11v6M14 11v6"/>
-                    <path d="M9 6V4h6v2"/>
-                </svg>
-            </button>
         `;
         list.appendChild(li);
     });
 
-    // Delegate events — star, edit, check, delete
+    // Delegate events — star, tomorrow, edit, check
     list.querySelectorAll('.star-btn').forEach(btn => {
         btn.addEventListener('click', () => togglePriority(btn.dataset.id));
     });
@@ -1296,6 +1289,11 @@ function init() {
 
     // Edit task modal
     document.getElementById('save-edit-task').addEventListener('click', saveEditTask);
+    document.getElementById('delete-edit-task').addEventListener('click', () => {
+        const id = document.getElementById('edit-task-id').value;
+        document.getElementById('edit-task-modal').classList.add('hidden');
+        deleteTask(id);
+    });
     ['cancel-edit-task', 'cancel-edit-task-2'].forEach(id => {
         document.getElementById(id).addEventListener('click', () => {
             document.getElementById('edit-task-modal').classList.add('hidden');
