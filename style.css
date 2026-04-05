@@ -570,6 +570,22 @@ footer {
     margin-bottom: 6px;
 }
 
+.settings-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 4px;
+}
+.settings-toggle-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+    flex-shrink: 0;
+}
+
 .settings-hint {
     font-size: 0.82rem;
     color: var(--text-muted);

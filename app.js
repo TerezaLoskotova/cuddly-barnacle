@@ -7,7 +7,7 @@ const state = {
     tasks:          JSON.parse(localStorage.getItem('vd_tasks')     || '[]'),
     notes:          JSON.parse(localStorage.getItem('vd_notes')     || '[]'),
     recurring:      JSON.parse(localStorage.getItem('vd_recurring') || '[]'),
-    settings:       JSON.parse(localStorage.getItem('vd_settings')  || '{"summaryTime":"20:00"}'),
+    settings:       JSON.parse(localStorage.getItem('vd_settings')  || '{"summaryTime":"21:00","autoRollover":true}'),
     currentDate:    todayStr(),   // YYYY-MM-DD string being viewed
     activeTab:      'tasks',      // 'tasks' | 'notes'
     parsedVoice:    null,         // { text, reminder, type, days? }
@@ -415,7 +415,55 @@ function checkAndShowSummary() {
 
 function startSummaryCheck() {
     if (summaryCheckInterval) clearInterval(summaryCheckInterval);
-    summaryCheckInterval = setInterval(checkAndShowSummary, 60_000);
+    summaryCheckInterval = setInterval(() => {
+        checkAndShowSummary();
+        checkAutoRollover();
+    }, 60_000);
+}
+
+// ── Auto-rollover ──────────────────────────────────────────
+function checkAutoRollover() {
+    if (!state.settings.autoRollover) return;
+
+    const today = todayStr();
+
+    // Move any incomplete tasks from PAST days to today (missed rollovers)
+    const pastPending = state.tasks.filter(t => t.date < today && !t.done);
+    if (pastPending.length > 0) {
+        pastPending.forEach(t => {
+            t.date = today;
+            t.postponeCount = (t.postponeCount || 0) + 1;
+            t.reminderFired = false;
+        });
+        save();
+        renderTasks();
+        renderWeekStrip();
+    }
+
+    // Roll over today's tasks to tomorrow once we pass the summary time
+    if (state.settings.lastRolloverDate === today) return;
+
+    const now = new Date();
+    const cur = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    if (cur < state.settings.summaryTime) return;
+
+    const tomorrow = addDays(today, 1);
+    const todayPending = state.tasks.filter(t => t.date === today && !t.done);
+
+    state.settings.lastRolloverDate = today;
+    save();
+
+    if (todayPending.length > 0) {
+        todayPending.forEach(t => {
+            t.date = tomorrow;
+            t.postponeCount = (t.postponeCount || 0) + 1;
+            t.reminderFired = false;
+        });
+        save();
+        renderTasks();
+        renderWeekStrip();
+        showInAppAlert(`${todayPending.length} nesplněných úkolů přesunuto na zítra.`);
+    }
 }
 
 // ── CRUD – Tasks ───────────────────────────────────────────
@@ -1202,7 +1250,8 @@ function renderSearchResults(query) {
 
 // ── Settings modal ─────────────────────────────────────────
 function openSettingsModal() {
-    document.getElementById('summary-time-input').value = state.settings.summaryTime;
+    document.getElementById('summary-time-input').value    = state.settings.summaryTime || '21:00';
+    document.getElementById('auto-rollover-input').checked = state.settings.autoRollover !== false;
     document.getElementById('settings-modal').classList.remove('hidden');
 }
 
@@ -1211,8 +1260,9 @@ function closeSettingsModal() {
 }
 
 function saveSettings() {
-    state.settings.summaryTime     = document.getElementById('summary-time-input').value || '20:00';
-    state.settings.lastSummaryDate = null; // reset so new time can fire today
+    state.settings.summaryTime     = document.getElementById('summary-time-input').value || '21:00';
+    state.settings.autoRollover    = document.getElementById('auto-rollover-input').checked;
+    state.settings.lastSummaryDate = null;
     save();
     closeSettingsModal();
     startSummaryCheck();
@@ -1300,6 +1350,7 @@ function init() {
     renderNotes();
     scheduleAllReminders();
     startSummaryCheck();
+    checkAutoRollover();
     checkNotificationPermission();
     switchTab('tasks');
 

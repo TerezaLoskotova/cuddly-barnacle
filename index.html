@@ -231,9 +231,14 @@
             <div class="modal-body">
                 <label class="settings-label">
                     Automatické shrnutí dne v:
-                    <input type="time" id="summary-time-input" class="input input-time" value="20:00" />
+                    <input type="time" id="summary-time-input" class="input input-time" value="21:00" />
                 </label>
                 <p class="settings-hint">Každý den v tento čas se automaticky zobrazí shrnutí s přehledem splněných a nesplněných úkolů.</p>
+                <label class="settings-toggle-row">
+                    <input type="checkbox" id="auto-rollover-input" checked>
+                    <span>Automaticky přesunout nesplněné úkoly na další den</span>
+                </label>
+                <p class="settings-hint">Nesplněné úkoly se automaticky přesunou na zítřek ve stejný čas jako shrnutí.</p>
                 <button id="save-settings" class="btn btn-primary" style="margin-bottom:20px">Uložit</button>
 
                 <hr class="modal-divider">
