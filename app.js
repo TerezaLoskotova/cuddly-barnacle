@@ -641,25 +641,35 @@ function toggleRecurring(id) {
 }
 
 /**
- * For each active recurring template whose day matches today,
- * create a task for today (if not already spawned).
+ * Spawn recurring tasks for a specific date (if not already done).
  */
-function spawnRecurringTasks() {
-    const today    = todayStr();
-    const todayDay = new Date(today + 'T00:00:00').getDay();
-    let   spawned  = false;
+function spawnRecurringForDate(dateStr) {
+    const dayOfWeek = new Date(dateStr + 'T00:00:00').getDay();
+    let spawned = false;
 
     state.recurring.forEach(rec => {
         if (!rec.active) return;
-        if (!rec.days.includes(todayDay)) return;
-        if (rec.spawnedDates.includes(today)) return;
+        if (!rec.days.includes(dayOfWeek)) return;
+        if (rec.spawnedDates.includes(dateStr)) return;
 
-        addTask(rec.text, rec.reminder, today, rec.id);
-        rec.spawnedDates.push(today);
+        addTask(rec.text, rec.reminder, dateStr, rec.id);
+        rec.spawnedDates.push(dateStr);
         spawned = true;
     });
 
-    if (spawned) save();
+    return spawned;
+}
+
+/**
+ * Spawn recurring tasks for today + next 14 days so future days
+ * in the week strip already show the planned tasks.
+ */
+function spawnRecurringTasks() {
+    let anySpawned = false;
+    for (let i = 0; i <= 14; i++) {
+        if (spawnRecurringForDate(addDays(todayStr(), i))) anySpawned = true;
+    }
+    if (anySpawned) save();
 }
 
 // Label for day array, e.g. [1,2,3,4,5] → "Po–Pá"
@@ -1334,6 +1344,12 @@ function checkNotificationPermission() {
 // ── Date navigation ────────────────────────────────────────
 function navigateDate(delta) {
     state.currentDate = addDays(state.currentDate, delta);
+    // Ensure recurring tasks are spawned for the new date and its vicinity
+    let anySpawned = false;
+    for (let i = 0; i <= 7; i++) {
+        if (spawnRecurringForDate(addDays(state.currentDate, i))) anySpawned = true;
+    }
+    if (anySpawned) save();
     renderDateNav();
     renderWeekStrip();
     renderTasks();
