@@ -1,0 +1,12 @@
+{
+  "name": "muj-itinerar-reminders",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GitHub Actions script — sends FCM push reminders via Firebase Admin",
+  "scripts": {
+    "start": "node send-reminders.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}

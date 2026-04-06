@@ -51,6 +51,66 @@ function save() {
     localStorage.setItem('vd_settings',   JSON.stringify(state.settings));
 }
 
+// ── Firebase / FCM ─────────────────────────────────────────
+const FIREBASE_CONFIG = {
+    apiKey:            'AIzaSyDJRXZqGP3OC43kCr1dgBbOpAt7C60qNhU',
+    authDomain:        'muj-itinerar.firebaseapp.com',
+    projectId:         'muj-itinerar',
+    storageBucket:     'muj-itinerar.firebasestorage.app',
+    messagingSenderId: '44845352403',
+    appId:             '1:44845352403:web:4c90a250aaf198acc7db26',
+};
+const VAPID_KEY = 'BF5MkQTND1bIxHGePA360rcbTqz_Ngvm11eToa7kDSwq8gskPPTIKPxE9S9nWEobu75zEdUoguX_aHUJO3NHLi0';
+
+let db         = null;
+let fbMessaging = null;
+let fcmToken   = localStorage.getItem('fcm_token') || null;
+
+function initFirebase() {
+    if (typeof firebase === 'undefined') return;
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
+}
+
+async function initFCM() {
+    if (typeof firebase === 'undefined' || !db) return;
+    if (!('serviceWorker' in navigator)) return;
+    if (Notification.permission !== 'granted') return;
+    try {
+        fbMessaging = firebase.messaging();
+        const swReg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+        const token = await fbMessaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
+        if (token) {
+            fcmToken = token;
+            localStorage.setItem('fcm_token', token);
+        }
+    } catch (err) {
+        console.warn('FCM init error:', err);
+    }
+}
+
+function syncReminderToFirestore(task) {
+    if (!db || !fcmToken) return;
+    if (!task.reminder || task.done) {
+        db.collection('reminders').doc(task.id).delete().catch(() => {});
+        return;
+    }
+    db.collection('reminders').doc(task.id).set({
+        taskId:       task.id,
+        text:         task.text,
+        date:         task.date,
+        reminderTime: task.reminder,
+        token:        fcmToken,
+        done:         false,
+        fired:        task.reminderFired || false,
+    }).catch(err => console.warn('Firestore sync error:', err));
+}
+
+function deleteReminderFromFirestore(taskId) {
+    if (!db) return;
+    db.collection('reminders').doc(taskId).delete().catch(() => {});
+}
+
 // ── Voice parsing ──────────────────────────────────────────
 /*
  * Detects reminder time from Czech transcript.
@@ -376,6 +436,7 @@ function snoozeTask(id, hours) {
     task.postponeCount = (task.postponeCount || 0) + 1;
     save();
     scheduleReminder(task);
+    syncReminderToFirestore(task);
     renderTasks();
     showInAppAlert(`Odloženo na ${hh}:${mm}`);
 }
@@ -483,12 +544,19 @@ function addTask(text, reminder, date, recurringId, priority) {
     state.tasks.push(task);
     save();
     if (task.date === todayStr()) scheduleReminder(task);
+    syncReminderToFirestore(task);
     renderTasks();
 }
 
 function toggleTask(id) {
     const t = state.tasks.find(x => x.id === id);
-    if (t) { t.done = !t.done; save(); renderTasks(); renderWeekStrip(); }
+    if (!t) return;
+    t.done = !t.done;
+    save();
+    if (t.done) deleteReminderFromFirestore(t.id);
+    else syncReminderToFirestore(t);
+    renderTasks();
+    renderWeekStrip();
 }
 
 function togglePriority(id) {
@@ -504,6 +572,7 @@ function deleteTask(id) {
     lastDeletedTask = found ? JSON.parse(JSON.stringify(found)) : null;
     state.tasks = state.tasks.filter(x => x.id !== id);
     save();
+    deleteReminderFromFirestore(id);
     renderTasks();
     renderWeekStrip();
     if (lastDeletedTask) showUndoAlert();
@@ -582,6 +651,7 @@ function saveEditTask() {
     t.priority      = priority;
     save();
     if (t.date === todayStr()) scheduleReminder(t);
+    syncReminderToFirestore(t);
     renderTasks();
     renderWeekStrip();
     document.getElementById('edit-task-modal').classList.add('hidden');
@@ -1369,6 +1439,8 @@ function init() {
     checkAutoRollover();
     checkNotificationPermission();
     switchTab('tasks');
+    initFirebase();
+    if (Notification.permission === 'granted') initFCM();
 
     // Mic button
     document.getElementById('mic-btn').addEventListener('click', () => {
@@ -1472,8 +1544,9 @@ function init() {
 
     // Notification banner
     document.getElementById('allow-notif').addEventListener('click', () => {
-        Notification.requestPermission().then(() => {
+        Notification.requestPermission().then(permission => {
             document.getElementById('notif-banner').classList.add('hidden');
+            if (permission === 'granted') initFCM();
         });
     });
     document.getElementById('deny-notif').addEventListener('click', () => {
