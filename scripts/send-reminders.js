@@ -62,15 +62,13 @@ async function main() {
         const [rHH, rMM]      = r.reminderTime.split(':').map(Number);
         const reminderMinutes = rHH * 60 + rMM;
 
-        // Fire if:
-        //  • date is today AND reminder time is within the last 5-minute window
-        //  • OR date is in the past (missed reminder) and not yet fired
+        // Fire if reminder time has already passed today, or date is in the past.
+        // The fired:true flag prevents duplicates.
         const isToday    = r.date === todayStr;
         const isPastDate = r.date < todayStr;
-        const inWindow   = isToday && (totalMinutes - reminderMinutes) >= 0
-                                   && (totalMinutes - reminderMinutes) <  5;
+        const timePassed = isToday && reminderMinutes <= totalMinutes;
 
-        if (!inWindow && !isPastDate) return;
+        if (!timePassed && !isPastDate) return;
 
         const message = {
             token: r.token,
