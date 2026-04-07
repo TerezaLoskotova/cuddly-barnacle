@@ -83,10 +83,21 @@ async function initFCM() {
         if (token) {
             fcmToken = token;
             localStorage.setItem('fcm_token', token);
+            syncAllRemindersToFirestore();
         }
     } catch (err) {
         console.warn('FCM init error:', err);
     }
+}
+
+function syncAllRemindersToFirestore() {
+    if (!db || !fcmToken) return;
+    const today = todayStr();
+    state.tasks.forEach(t => {
+        if (t.done || !t.reminder) return;
+        if (t.date < today) return; // skip old past tasks
+        syncReminderToFirestore(t);
+    });
 }
 
 function syncReminderToFirestore(task) {
