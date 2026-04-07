@@ -78,14 +78,15 @@ async function initFCM() {
     if (Notification.permission !== 'granted') return;
     try {
         fbMessaging = firebase.messaging();
-        const swReg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+        // Use the main sw.js registration (which now includes FCM handling)
+        const swReg = await navigator.serviceWorker.ready;
         const token = await fbMessaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
         if (token) {
             fcmToken = token;
             localStorage.setItem('fcm_token', token);
             syncAllRemindersToFirestore();
         }
-        // Show notification even when app is open (foreground)
+        // Show notification when app is open (foreground)
         fbMessaging.onMessage(payload => {
             const title = payload.notification?.title || 'Připomínka';
             const body  = payload.notification?.body  || '';
