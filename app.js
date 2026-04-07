@@ -495,7 +495,7 @@ function startSummaryCheck() {
 
 // ── Auto-rollover ──────────────────────────────────────────
 function checkAutoRollover() {
-    if (!state.settings.autoRollover) return;
+    if (state.settings.autoRollover === false) return;
 
     const today = todayStr();
 
