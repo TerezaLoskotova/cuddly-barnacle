@@ -2,6 +2,10 @@
    Handles background push notifications for Můj itinerář
    ──────────────────────────────────────────────────────── */
 
+// Ensure this SW activates immediately (don't stay in "waiting" state)
+self.addEventListener('install',  () => self.skipWaiting());
+self.addEventListener('activate', e  => e.waitUntil(self.clients.claim()));
+
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 

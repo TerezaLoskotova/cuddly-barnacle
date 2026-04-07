@@ -85,6 +85,16 @@ async function initFCM() {
             localStorage.setItem('fcm_token', token);
             syncAllRemindersToFirestore();
         }
+        // Show notification even when app is open (foreground)
+        fbMessaging.onMessage(payload => {
+            const title = payload.notification?.title || 'Připomínka';
+            const body  = payload.notification?.body  || '';
+            if (Notification.permission === 'granted') {
+                new Notification(title, { body, icon: '/cuddly-barnacle/icon-192.png' });
+            } else {
+                showInAppAlert(`🔔 ${title}: ${body}`);
+            }
+        });
     } catch (err) {
         console.warn('FCM init error:', err);
     }
