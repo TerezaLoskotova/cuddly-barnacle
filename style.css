@@ -354,6 +354,7 @@ main {
 
 .task-text {
     font-size: 0.95rem;
+    font-weight: 600;
     line-height: 1.45;
     word-break: break-word;
 }
@@ -709,14 +710,13 @@ footer {
     cursor: pointer;
     padding: 4px;
     border-radius: 6px;
-    color: var(--border);
+    color: #c0bab4;
     transition: color .15s, background .15s;
     display: flex;
     align-items: center;
 }
 .star-btn:hover,
 .star-btn.active { color: #f5a623; }
-.task-item:hover .star-btn { color: #d4c4a0; }
 .star-btn.active:hover { color: #e09510; }
 
 /* Task item — priority variant (gold accent) */
@@ -1017,21 +1017,18 @@ footer {
 }
 .btn-delete-task:hover { background: var(--danger-bg); }
 
-/* ── Tomorrow / Edit task buttons ─────────────────────────── */
-.task-tomorrow, .task-edit {
+/* ── Edit task button ──────────────────────────────────────── */
+.task-edit {
     flex-shrink: 0;
     background: none;
     border: none;
     cursor: pointer;
     padding: 4px;
     border-radius: 6px;
-    color: transparent;
+    color: var(--text-muted);
     transition: color .15s, background .15s;
 }
-.task-item:hover .task-tomorrow { color: var(--text-muted); }
-.task-tomorrow:hover { background: var(--success-bg); color: var(--success) !important; }
-.task-item:hover .task-edit { color: var(--text-muted); }
-.task-edit:hover { background: var(--primary-light); color: var(--primary) !important; }
+.task-edit:hover { background: var(--primary-light); color: var(--primary); }
 
 /* ── Search ────────────────────────────────────────────────── */
 .search-modal-inner { max-height: 80dvh; }

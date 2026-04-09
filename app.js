@@ -1002,11 +1002,6 @@ function renderTasks() {
                 ${reminderHtml}
             </div>
             <button class="star-btn${task.priority ? ' active' : ''}" data-id="${task.id}" aria-label="Priorita">${starFilled}</button>
-            <button class="task-tomorrow" data-id="${task.id}" aria-label="Přesunout na zítra" title="Přesunout na zítra">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                    <polyline points="9 18 15 12 9 6"/>
-                </svg>
-            </button>
             <button class="task-edit" data-id="${task.id}" aria-label="Upravit">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -1017,21 +1012,15 @@ function renderTasks() {
         list.appendChild(li);
     });
 
-    // Delegate events — star, tomorrow, edit, check
+    // Delegate events — star, edit, check
     list.querySelectorAll('.star-btn').forEach(btn => {
         btn.addEventListener('click', () => togglePriority(btn.dataset.id));
-    });
-    list.querySelectorAll('.task-tomorrow').forEach(btn => {
-        btn.addEventListener('click', () => moveToNextDay(btn.dataset.id));
     });
     list.querySelectorAll('.task-edit').forEach(btn => {
         btn.addEventListener('click', () => openEditTask(btn.dataset.id));
     });
     list.querySelectorAll('.task-check').forEach(btn => {
         btn.addEventListener('click', () => toggleTask(btn.dataset.id));
-    });
-    list.querySelectorAll('.task-delete').forEach(btn => {
-        btn.addEventListener('click', () => deleteTask(btn.dataset.id));
     });
 }
 
@@ -1533,6 +1522,11 @@ function init() {
 
     // Edit task modal
     document.getElementById('save-edit-task').addEventListener('click', saveEditTask);
+    document.getElementById('tomorrow-edit-task').addEventListener('click', () => {
+        const id = document.getElementById('edit-task-id').value;
+        document.getElementById('edit-task-modal').classList.add('hidden');
+        moveToNextDay(id);
+    });
     document.getElementById('delete-edit-task').addEventListener('click', () => {
         const id = document.getElementById('edit-task-id').value;
         document.getElementById('edit-task-modal').classList.add('hidden');
