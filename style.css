@@ -23,20 +23,17 @@
     --shadow:    0 2px 12px rgba(0,0,0,.08);
 }
 
-html { font-size: 16px; }
+html { font-size: 17px; }
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100dvh;
-    display: flex;
-    justify-content: center;
 }
 
 #app {
     width: 100%;
-    max-width: 520px;
     display: flex;
     flex-direction: column;
     min-height: 100dvh;
@@ -273,12 +270,10 @@ main {
 
 /* ── Tasks section ─────────────────────────────────────── */
 #tasks-section {
-    flex: 1;
     background: var(--surface);
 }
 
 #notes-section {
-    flex: 1;
     background: var(--surface);
 }
 
@@ -436,10 +431,8 @@ main {
 footer {
     position: fixed;
     bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 520px;
+    left: 0;
+    right: 0;
     background: var(--surface);
     border-top: 1px solid var(--border);
     padding: 12px 20px;
