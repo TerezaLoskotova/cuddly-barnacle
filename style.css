@@ -100,13 +100,15 @@ header h1 {
 .banner p { flex: 1; }
 .banner-actions { display: flex; gap: 8px; }
 
+html, body { width: 100%; }
+
 /* ── Main ──────────────────────────────────────────────── */
 main {
     flex: 1;
-    padding: 20px;
+    padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 0;
 }
 
 /* ── Mic button ────────────────────────────────────────── */
@@ -115,10 +117,11 @@ main {
     flex-direction: column;
     align-items: center;
     gap: 14px;
-    padding: 28px 20px;
+    padding: 24px 20px;
     background: var(--surface);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
+    border-radius: 0;
+    box-shadow: none;
+    border-bottom: 1px solid var(--border);
 }
 
 .mic-button {
@@ -233,14 +236,18 @@ main {
 #manual-toggle-row {
     display: flex;
     justify-content: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
 }
 
 /* ── Manual form ───────────────────────────────────────── */
 .card {
     background: var(--surface);
-    border-radius: var(--radius);
-    padding: 16px;
-    box-shadow: var(--shadow);
+    border-radius: 0;
+    padding: 16px 20px;
+    box-shadow: none;
+    border-bottom: 1px solid var(--border);
 }
 
 .form-row { margin-bottom: 10px; }
@@ -267,13 +274,20 @@ main {
 /* ── Tasks section ─────────────────────────────────────── */
 #tasks-section {
     flex: 1;
+    background: var(--surface);
+}
+
+#notes-section {
+    flex: 1;
+    background: var(--surface);
 }
 
 .tasks-header {
     display: flex;
     align-items: baseline;
     gap: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 0;
+    padding: 16px 16px 12px;
 }
 
 .tasks-header h2 { font-size: 1rem; font-weight: 700; }
@@ -287,24 +301,25 @@ main {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 0;
 }
 
 /* Task item */
 .task-item {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 12px 14px;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    padding: 14px 16px;
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    transition: opacity .2s, border-color .2s;
+    transition: opacity .2s, background .2s;
 }
 
 .task-item.done {
     opacity: .55;
-    border-color: transparent;
+    border-bottom-color: transparent;
     background: #fafaf9;
 }
 
@@ -625,10 +640,12 @@ footer {
 /* ── Tab bar ───────────────────────────────────────────── */
 .tab-bar {
     display: flex;
-    background: var(--border);
-    border-radius: 10px;
-    padding: 3px;
-    gap: 2px;
+    background: var(--surface);
+    border-radius: 0;
+    padding: 8px 12px;
+    gap: 4px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
 }
 
 .tab-btn {
@@ -637,7 +654,7 @@ footer {
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 8px 12px;
+    padding: 9px 12px;
     border-radius: 8px;
     border: none;
     background: none;
@@ -649,17 +666,18 @@ footer {
 }
 
 .tab-btn.active {
-    background: var(--surface);
+    background: var(--primary-light);
     color: var(--primary);
-    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    box-shadow: none;
 }
 
 /* ── Notes section ─────────────────────────────────────── */
 .note-item {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 12px 14px;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    padding: 14px 16px;
     display: flex;
     align-items: flex-start;
     gap: 12px;
@@ -710,8 +728,8 @@ footer {
 
 /* Task item — priority variant (gold accent) */
 .task-item.is-priority {
-    border-color: #f5d98a;
     background: #fffbf0;
+    border-bottom-color: #f5d98a;
     border-left: 3px solid #f5a623;
 }
 .task-item.is-priority .task-text { font-weight: 600; }
@@ -719,11 +737,11 @@ footer {
 /* Task item — recurring variant (mint) */
 .task-item.is-recurring {
     background: var(--mint-bg);
-    border-color: var(--mint-border);
+    border-bottom-color: var(--mint-border);
 }
 .task-item.is-recurring.done {
     background: #f0faf6;
-    border-color: transparent;
+    border-bottom-color: transparent;
 }
 .task-item.is-recurring .task-check:hover { border-color: var(--mint); }
 .task-item.is-recurring.done .task-check  { background: var(--mint); border-color: var(--mint); }
@@ -731,7 +749,7 @@ footer {
 /* Task item — over-postponed (3+) variant */
 .task-item.over-postponed {
     background: var(--danger-bg);
-    border-color: #ffc5c5;
+    border-bottom-color: #ffc5c5;
 }
 .task-item.over-postponed .task-text { color: var(--danger); }
 
