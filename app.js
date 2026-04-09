@@ -111,21 +111,24 @@ function syncAllRemindersToFirestore() {
     });
 }
 
-function syncReminderToFirestore(task) {
+function syncReminderToFirestore(task, resetFired = false) {
     if (!db || !fcmToken) return;
     if (!task.reminder || task.done) {
         db.collection('reminders').doc(task.id).delete().catch(() => {});
         return;
     }
-    db.collection('reminders').doc(task.id).set({
+    const data = {
         taskId:       task.id,
         text:         task.text,
         date:         task.date,
         reminderTime: task.reminder,
         token:        fcmToken,
         done:         false,
-        fired:        task.reminderFired || false,
-    }).catch(err => console.warn('Firestore sync error:', err));
+    };
+    if (resetFired) data.fired = false;  // only reset when reminder is new/changed
+    db.collection('reminders').doc(task.id)
+        .set(data, { merge: true })
+        .catch(err => console.warn('Firestore sync error:', err));
 }
 
 function deleteReminderFromFirestore(taskId) {
@@ -458,7 +461,7 @@ function snoozeTask(id, hours) {
     task.postponeCount = (task.postponeCount || 0) + 1;
     save();
     scheduleReminder(task);
-    syncReminderToFirestore(task);
+    syncReminderToFirestore(task, true);  // snoozed — new time, reset fired
     renderTasks();
     showInAppAlert(`Odloženo na ${hh}:${mm}`);
 }
@@ -566,7 +569,7 @@ function addTask(text, reminder, date, recurringId, priority) {
     state.tasks.push(task);
     save();
     if (task.date === todayStr()) scheduleReminder(task);
-    syncReminderToFirestore(task);
+    syncReminderToFirestore(task, true);  // new task — reset fired
     renderTasks();
 }
 
@@ -673,7 +676,7 @@ function saveEditTask() {
     t.priority      = priority;
     save();
     if (t.date === todayStr()) scheduleReminder(t);
-    syncReminderToFirestore(t);
+    syncReminderToFirestore(t, true);  // reminder changed — reset fired
     renderTasks();
     renderWeekStrip();
     document.getElementById('edit-task-modal').classList.add('hidden');

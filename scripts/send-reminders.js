@@ -42,10 +42,9 @@ async function main() {
     const { todayStr, totalMinutes } = getPragueTime();
     console.log(`Running at Prague time: ${todayStr} ${Math.floor(totalMinutes/60).toString().padStart(2,'0')}:${(totalMinutes%60).toString().padStart(2,'0')}`);
 
-    // Fetch all unfired, incomplete reminders
+    // Fetch all incomplete reminders (filter fired client-side to handle missing field)
     const snapshot = await db.collection('reminders')
-        .where('done',  '==', false)
-        .where('fired', '==', false)
+        .where('done', '==', false)
         .get();
 
     if (snapshot.empty) {
@@ -59,6 +58,7 @@ async function main() {
         const r = doc.data();
         if (!r.token || !r.reminderTime || !r.date) return;
 
+        if (r.fired === true) return;  // already sent, skip regardless of query
         const [rHH, rMM]      = r.reminderTime.split(':').map(Number);
         const reminderMinutes = rHH * 60 + rMM;
 

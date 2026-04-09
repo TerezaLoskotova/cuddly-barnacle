@@ -45,7 +45,7 @@ body {
 
 /* ── Header ────────────────────────────────────────────── */
 header {
-    padding: 24px 20px 16px;
+    padding: calc(env(safe-area-inset-top, 0px) + 16px) 20px 16px;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     position: sticky;
