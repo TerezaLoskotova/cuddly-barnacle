@@ -73,14 +73,14 @@ header h1 {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 6px;
+    padding: 8px;
     border-radius: 8px;
     color: var(--text-muted);
     display: flex;
     align-items: center;
     transition: background .15s, color .15s;
 }
-.icon-btn svg { width: 20px; height: 20px; }
+.icon-btn svg { width: 26px; height: 26px; }
 .icon-btn:hover { background: var(--border); color: var(--text); }
 
 /* ── Banner ────────────────────────────────────────────── */
@@ -123,8 +123,8 @@ main {
 
 .mic-button {
     position: relative;
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
     border-radius: 50%;
     border: none;
     background: var(--primary);
@@ -134,7 +134,7 @@ main {
     align-items: center;
     justify-content: center;
     transition: transform .15s, background .15s, box-shadow .15s;
-    box-shadow: 0 4px 20px rgba(29,78,216,.35);
+    box-shadow: 0 4px 24px rgba(29,78,216,.35);
 }
 
 .mic-button:hover {
@@ -144,7 +144,7 @@ main {
 
 .mic-button:active { transform: scale(0.97); }
 
-.mic-icon { width: 32px; height: 32px; position: relative; z-index: 1; }
+.mic-icon { width: 44px; height: 44px; position: relative; z-index: 1; }
 
 .pulse-ring {
     position: absolute;
@@ -384,7 +384,7 @@ main {
     transition: color .15s, background .15s;
 }
 
-.task-delete svg { width: 15px; height: 15px; }
+.task-delete svg { width: 20px; height: 20px; }
 .task-item:hover .task-delete { color: var(--text-muted); }
 .task-delete:hover { background: #ffeaea; color: var(--danger) !important; }
 
@@ -1078,6 +1078,13 @@ footer {
     cursor: pointer;
     white-space: nowrap;
 }
+
+/* ── Icon size overrides ───────────────────────────────── */
+.tab-btn svg { width: 20px; height: 20px; }
+.task-tomorrow svg, .task-edit svg { width: 20px; height: 20px; }
+.star-btn svg { width: 20px; height: 20px; }
+footer .btn svg { width: 22px; height: 22px; }
+#add-manual-btn svg { width: 18px; height: 18px; }
 
 /* ── Utilities ─────────────────────────────────────────── */
 .hidden { display: none !important; }
