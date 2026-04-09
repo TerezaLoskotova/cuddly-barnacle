@@ -266,7 +266,7 @@ main {
     color: var(--text-muted);
 }
 
-.form-actions { display: flex; gap: 8px; }
+.form-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
 /* ── Tasks section ─────────────────────────────────────── */
 #tasks-section {
@@ -491,7 +491,7 @@ footer {
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    padding: 20px;
+    padding: 0;
     animation: fade-in .2s ease;
 }
 
@@ -499,10 +499,10 @@ footer {
 
 .modal {
     background: var(--surface);
-    border-radius: 16px 16px 12px 12px;
+    border-radius: 20px 20px 0 0;
     width: 100%;
-    max-width: 500px;
-    max-height: 90dvh;
+    max-width: 100%;
+    max-height: 92dvh;
     overflow-y: auto;
     animation: slide-up .25s ease;
 }
@@ -519,9 +519,9 @@ footer {
     padding: 20px 20px 0;
 }
 
-.modal-header h2 { font-size: 1.1rem; font-weight: 700; }
+.modal-header h2 { font-size: 1.15rem; font-weight: 700; }
 
-.modal-body { padding: 16px 20px 24px; }
+.modal-body { padding: 16px 20px 32px; }
 
 .summary-heading {
     font-size: 0.82rem;
@@ -1008,7 +1008,7 @@ footer {
     white-space: nowrap;
 }
 
-/* ── Delete button in edit modal ───────────────────────────── */
+/* ── Modal action buttons ───────────────────────────────────── */
 .btn-delete-task {
     background: none;
     color: var(--danger);
@@ -1016,6 +1016,13 @@ footer {
     margin-left: auto;
 }
 .btn-delete-task:hover { background: var(--danger-bg); }
+
+#tomorrow-edit-task {
+    background: var(--success-bg);
+    color: var(--success);
+    border: 1px solid #a8e4c8;
+}
+#tomorrow-edit-task:hover { background: #d0f0e4; }
 
 /* ── Edit task button ──────────────────────────────────────── */
 .task-edit {
