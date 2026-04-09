@@ -1080,10 +1080,10 @@ footer {
 }
 
 /* ── Icon size overrides ───────────────────────────────── */
-.tab-btn svg { width: 20px; height: 20px; }
-.task-tomorrow svg, .task-edit svg { width: 20px; height: 20px; }
-.star-btn svg { width: 20px; height: 20px; }
-footer .btn svg { width: 22px; height: 22px; }
+.tab-btn svg { width: 26px; height: 26px; }
+.task-tomorrow svg, .task-edit svg { width: 26px; height: 26px; }
+.star-btn svg { width: 26px; height: 26px; }
+footer .btn svg { width: 28px; height: 28px; }
 #add-manual-btn svg { width: 18px; height: 18px; }
 
 /* ── Utilities ─────────────────────────────────────────── */
