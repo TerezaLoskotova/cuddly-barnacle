@@ -85,6 +85,7 @@ async function initFCM() {
             fcmToken = token;
             localStorage.setItem('fcm_token', token);
             syncAllRemindersToFirestore();
+            syncSettingsToFirestore();
         }
         // Show notification when app is open (foreground)
         fbMessaging.onMessage(payload => {
@@ -129,6 +130,14 @@ function syncReminderToFirestore(task, resetFired = false) {
     db.collection('reminders').doc(task.id)
         .set(data, { merge: true })
         .catch(err => console.warn('Firestore sync error:', err));
+}
+
+function syncSettingsToFirestore() {
+    if (!db || !fcmToken) return;
+    db.collection('settings').doc('user').set({
+        token:       fcmToken,
+        summaryTime: state.settings.summaryTime || '21:00',
+    }, { merge: true }).catch(() => {});
 }
 
 function deleteReminderFromFirestore(taskId) {
@@ -1371,6 +1380,7 @@ function saveSettings() {
     save();
     closeSettingsModal();
     startSummaryCheck();
+    syncSettingsToFirestore();
     showInAppAlert('Nastavení uloženo.');
 }
 

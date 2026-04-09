@@ -120,6 +120,43 @@ async function main() {
 
     await Promise.all(sends);
     console.log(`Done — processed ${sends.length} reminder(s).`);
+
+    // Daily summary push
+    await sendDailySummary(todayStr, totalMinutes);
+}
+
+async function sendDailySummary(todayStr, totalMinutes) {
+    const settingsDoc = await db.collection('settings').doc('user').get();
+    if (!settingsDoc.exists) return;
+
+    const s = settingsDoc.data();
+    if (!s.token || !s.summaryTime) return;
+    if (s.summaryFiredDate === todayStr) return; // already sent today
+
+    const [sHH, sMM]    = s.summaryTime.split(':').map(Number);
+    const summaryMinutes = sHH * 60 + sMM;
+    if (totalMinutes < summaryMinutes) return; // not yet time
+
+    await messaging.send({
+        token: s.token,
+        notification: {
+            title: 'Shrnutí dne 📋',
+            body:  'Jak ti šel dnešní den? Klikni pro přehled úkolů.',
+        },
+        webpush: {
+            notification: {
+                icon:  '/cuddly-barnacle/icon-192.png',
+                badge: '/cuddly-barnacle/icon-192.png',
+                requireInteraction: false,
+            },
+            fcm_options: {
+                link: 'https://terezaloskotova.github.io/cuddly-barnacle/',
+            },
+        },
+    }).catch(err => console.error('✗ Summary push failed:', err.message));
+
+    await db.collection('settings').doc('user').update({ summaryFiredDate: todayStr });
+    console.log(`✓ Sent daily summary notification (summaryTime: ${s.summaryTime}).`);
 }
 
 main().catch(err => {
