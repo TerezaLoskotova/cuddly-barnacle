@@ -13,7 +13,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <title>Můj itinerář</title>
-    <link rel="stylesheet" href="style.css?v=12">
+    <link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
     <div id="app">
@@ -109,10 +109,10 @@
                     <input type="text" id="manual-task-input" placeholder="Úkol nebo nápad…" class="input" />
                 </div>
                 <div class="form-row form-row-split">
-                    <label>
-                        Připomínka v:
-                        <input type="time" id="manual-time-input" class="input input-time" />
-                    </label>
+                    <div class="edit-field">
+                        <span class="edit-field-label">Připomínka v:</span>
+                        <input type="time" id="manual-time-input" class="input" />
+                    </div>
                     <div class="form-actions">
                         <button id="confirm-manual" class="btn btn-primary">Přidat</button>
                         <button id="cancel-manual" class="btn btn-ghost">Zrušit</button>
@@ -313,11 +313,11 @@
                 </div>
 
                 <div class="form-row form-row-split" style="margin-top:10px">
-                    <label>
-                        Čas připomínky:
-                        <input type="time" id="rec-time-input" class="input input-time" />
-                    </label>
-                    <button id="confirm-recurring" class="btn btn-primary">Přidat</button>
+                    <div class="edit-field">
+                        <span class="edit-field-label">Čas připomínky:</span>
+                        <input type="time" id="rec-time-input" class="input" />
+                    </div>
+                    <button id="confirm-recurring" class="btn btn-primary" style="align-self:flex-end">Přidat</button>
                 </div>
 
             </div>
@@ -342,14 +342,14 @@
                     <input type="text" id="edit-task-text" class="input" placeholder="Název úkolu…" />
                 </div>
                 <div class="form-row form-row-split">
-                    <label>
-                        Připomínka v:
-                        <input type="time" id="edit-task-time" class="input input-time" />
-                    </label>
-                    <label>
-                        Datum:
-                        <input type="date" id="edit-task-date" class="input input-time" />
-                    </label>
+                    <div class="edit-field">
+                        <span class="edit-field-label">Připomínka v:</span>
+                        <input type="time" id="edit-task-time" class="input" />
+                    </div>
+                    <div class="edit-field">
+                        <span class="edit-field-label">Datum:</span>
+                        <input type="date" id="edit-task-date" class="input" />
+                    </div>
                 </div>
                 <div class="form-row">
                     <label class="edit-priority-label">
