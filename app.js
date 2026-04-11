@@ -662,7 +662,6 @@ function openEditTask(id) {
     document.getElementById('edit-task-date').value       = t.date || todayStr();
     document.getElementById('edit-task-priority').checked = !!t.priority;
     document.getElementById('edit-task-modal').classList.remove('hidden');
-    document.getElementById('edit-task-text').focus();
 }
 
 function saveEditTask() {
