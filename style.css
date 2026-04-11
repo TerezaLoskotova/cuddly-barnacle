@@ -499,6 +499,17 @@ footer {
 }
 .input-time { width: auto; min-width: 110px; max-width: 170px; padding: 9px 12px; }
 
+/* Android Chrome fix: time/date inputs collapse to 0 height in flex containers */
+input[type="time"],
+input[type="date"] {
+    min-height: 46px;
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
 /* ── Modal ─────────────────────────────────────────────── */
 .modal-overlay {
     position: fixed;
