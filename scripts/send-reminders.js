@@ -74,7 +74,7 @@ async function main() {
             token: r.token,
             notification: {
                 title: 'Připomínka',
-                body:  r.text,
+                body:  (r.text || '').slice(0, 200),
             },
             data: {
                 taskId: r.taskId || doc.id,

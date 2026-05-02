@@ -1639,6 +1639,7 @@ if ('serviceWorker' in navigator) {
 
     // Handle action messages posted back from notification clicks
     navigator.serviceWorker.addEventListener('message', e => {
+        if (e.origin && e.origin !== location.origin) return;
         const { type, taskId, hours } = e.data || {};
         if (type === 'sw_task_done') toggleTask(taskId);
         if (type === 'sw_snooze')    snoozeTask(taskId, hours);
