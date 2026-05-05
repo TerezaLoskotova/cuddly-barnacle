@@ -1,13 +1,13 @@
 {
-  "name": "Můj itinerář",
-  "short_name": "Itinerář",
-  "description": "Diktuj úkoly, nápady a připomínky. Shrnutí dne každý večer.",
-  "start_url": "/cuddly-barnacle/",
-  "scope": "/cuddly-barnacle/",
+  "name": "Pohádky na dobrou noc",
+  "short_name": "Pohádky",
+  "description": "Pohádka na míru pro tvoje dítě — z toho, co dnes zažilo.",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f5f4f2",
-  "theme_color": "#1d4ed8",
+  "background_color": "#0f0a2e",
+  "theme_color": "#1a1040",
   "lang": "cs",
   "icons": [
     {
@@ -23,6 +23,6 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["productivity", "utilities"],
+  "categories": ["education", "lifestyle"],
   "screenshots": []
 }
