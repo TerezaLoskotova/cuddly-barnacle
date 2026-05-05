@@ -65,6 +65,10 @@ document.getElementById('story-form').addEventListener('submit', async (e) => {
         // Show story screen
         document.getElementById('story-title').textContent = `Pohádka pro ${childName}`;
         document.getElementById('story-text').textContent = data.story;
+
+        const demoBanner = document.getElementById('demo-banner');
+        if (data.demo) demoBanner.classList.remove('hidden');
+        else demoBanner.classList.add('hidden');
         document.getElementById('play-hint').textContent = 'Přehrát pohádku hlasem';
         resetPlayButton();
         showScreen('screen-story');

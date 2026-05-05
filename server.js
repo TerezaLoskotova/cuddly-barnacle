@@ -9,7 +9,8 @@ const app = express();
 app.use(express.json());
 app.use(express.static(__dirname));
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const DEMO_MODE = !process.env.ANTHROPIC_API_KEY;
+const client = DEMO_MODE ? null : new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const SYSTEM_PROMPT = `Jsi milý vypravěč pohádek pro malé děti. Tvoříš krátké, teplé pohádky na dobrou noc v češtině.
 
@@ -24,11 +25,36 @@ Pravidla:
 
 Vracej POUZE text pohádky, bez nadpisů, bez uvozovek, bez komentářů.`;
 
+function demoStory(childName) {
+    return `Byl jednou jeden kouzelný večer, kdy malé ${childName} se vrátilo domů plné zážitků a dobrodružství.
+
+Cestou ulicí si ${childName} všimlo něčeho neobvyklého — na chodníku seděl malý světluška a svítil zlatým světlem. „Pomůžeš mi najít cestu domů?" zeptal se světluška tichým hláskem.
+
+„Ale samozřejmě," odpovědělo ${childName} a vzalo světlušku opatrně do dlaní.
+
+Šli spolu přes zahradu plnou rozkvetlých sedmikrásek, kolem staré lípy, kde žil moudrý sýček, až k malé loučce u potoka. Tam svítily stovky dalších světlušek a čekaly na svého kamaráda.
+
+„Díky, ${childName}!" zavolaly světlušky radostně a začaly tančit ve vzduchu. Nakreslily zlaté hvězdičky a vláčky světla, jen pro ${childName} jako poděkování.
+
+${childName} se usmálo, zamávalo světluškám a pomalu se vydalo domů. Nohy mělo trochu unavené od chůze, oči těžké od krásných zážitků dne.
+
+Doma čekala teplá postel a měkký polštář. ${childName} si lehlo, přikrylo se až po bradu a z okna dopadalo na strop světlo měsíce — takové klidné, stříbrné a teplé.
+
+Za chvíli přišly sny — plné světlušek, zlatých hvězdičiek a nových dobrodružství, která čekají zítra.
+
+Dobrou noc.`;
+}
+
 app.post('/api/generate-story', async (req, res) => {
     const { childName, childAge, events } = req.body;
 
     if (!childName || !events) {
         return res.status(400).json({ error: 'Chybí jméno dítěte nebo dnešní zážitky.' });
+    }
+
+    if (DEMO_MODE) {
+        await new Promise(r => setTimeout(r, 1800)); // simulace načítání
+        return res.json({ story: demoStory(childName), demo: true });
     }
 
     try {
