@@ -22,9 +22,45 @@
             <span></span><span></span><span></span><span></span><span></span>
         </div>
         <div class="home-content">
-            <div class="moon">🌙</div>
+            <!-- Vlastní postavička — čarodějník pohádek -->
+            <svg class="hero-character" viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <!-- hvězdičky kolem -->
+                <text x="8"  y="30"  font-size="14" fill="#f5c842" opacity="0.8">✦</text>
+                <text x="95" y="20"  font-size="10" fill="#f5c842" opacity="0.6">✦</text>
+                <text x="100" y="60" font-size="8"  fill="#f5c842" opacity="0.5">✦</text>
+                <text x="5"  y="75"  font-size="9"  fill="#f5c842" opacity="0.5">✦</text>
+                <!-- tělo -->
+                <ellipse cx="60" cy="105" rx="28" ry="22" fill="#3b2080"/>
+                <!-- kniha -->
+                <rect x="36" y="108" width="48" height="30" rx="4" fill="#f5c842" opacity="0.9"/>
+                <line x1="60" y1="108" x2="60" y2="138" stroke="#c9a020" stroke-width="1.5"/>
+                <line x1="44" y1="118" x2="56" y2="118" stroke="#c9a020" stroke-width="1"/>
+                <line x1="44" y1="124" x2="56" y2="124" stroke="#c9a020" stroke-width="1"/>
+                <line x1="64" y1="118" x2="76" y2="118" stroke="#c9a020" stroke-width="1"/>
+                <line x1="64" y1="124" x2="76" y2="124" stroke="#c9a020" stroke-width="1"/>
+                <!-- hlava -->
+                <circle cx="60" cy="72" r="22" fill="#f5c9a0"/>
+                <!-- oči -->
+                <ellipse cx="53" cy="70" rx="3.5" ry="4" fill="#2a1060"/>
+                <ellipse cx="67" cy="70" rx="3.5" ry="4" fill="#2a1060"/>
+                <circle cx="54.5" cy="68.5" r="1" fill="white"/>
+                <circle cx="68.5" cy="68.5" r="1" fill="white"/>
+                <!-- úsměv -->
+                <path d="M52 78 Q60 84 68 78" stroke="#c07040" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                <!-- tváře -->
+                <circle cx="48" cy="76" r="4" fill="#f09070" opacity="0.35"/>
+                <circle cx="72" cy="76" r="4" fill="#f09070" opacity="0.35"/>
+                <!-- čepice -->
+                <path d="M38 60 Q60 5 82 60 Z" fill="#5a35b0"/>
+                <ellipse cx="60" cy="60" rx="24" ry="7" fill="#7c5cbf"/>
+                <!-- hvězda na čepici -->
+                <text x="53" y="45" font-size="13" fill="#f5c842">★</text>
+                <!-- vlasy -->
+                <path d="M38 68 Q35 80 37 88" stroke="#8b5e3c" stroke-width="3" stroke-linecap="round" fill="none"/>
+                <path d="M82 68 Q85 80 83 88" stroke="#8b5e3c" stroke-width="3" stroke-linecap="round" fill="none"/>
+            </svg>
             <h1>Pohádky<br>na dobrou noc</h1>
-            <p class="tagline">Pohádka přesně pro vaše dítě,<br>z toho co dnes zažilo.</p>
+            <p class="tagline">Pohádka pro vaše dítko z dnešních událostí.<br>Udělejte jeho či její den kouzelnější.</p>
             <button id="btn-start" class="btn-primary-large">
                 Vytvořit pohádku
             </button>
@@ -43,6 +79,7 @@
         </div>
 
         <form id="story-form" class="form-card">
+
             <div class="field-group">
                 <label for="child-name">Jméno dítěte</label>
                 <input
@@ -55,26 +92,53 @@
                 />
             </div>
 
-            <div class="field-group">
-                <label for="child-age">Věk</label>
-                <div class="age-row">
-                    <button type="button" id="age-down" class="age-btn" aria-label="Méně">−</button>
-                    <span id="age-display">5</span>
-                    <button type="button" id="age-up" class="age-btn" aria-label="Více">+</button>
-                    <span class="age-unit">let</span>
+            <div class="field-row">
+                <div class="field-group">
+                    <label>Věk</label>
+                    <div class="age-row">
+                        <button type="button" id="age-down" class="age-btn" aria-label="Méně">−</button>
+                        <span id="age-display">5</span>
+                        <button type="button" id="age-up" class="age-btn" aria-label="Více">+</button>
+                        <span class="age-unit">let</span>
+                    </div>
+                </div>
+
+                <div class="field-group">
+                    <label>Pohlaví</label>
+                    <div class="gender-row">
+                        <button type="button" id="gender-girl" class="gender-btn active" data-gender="dívka">
+                            Dívka
+                        </button>
+                        <button type="button" id="gender-boy" class="gender-btn" data-gender="chlapec">
+                            Chlapec
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <div class="field-group">
                 <label for="events-input">Co dnes zažilo?</label>
-                <textarea
-                    id="events-input"
-                    placeholder="Šlo do školky, hrálo si s kamarádkou Eliškou, vidělo motýla na zahradě…"
-                    rows="4"
-                    maxlength="800"
-                    required
-                ></textarea>
-                <span class="char-count"><span id="char-num">0</span> / 800</span>
+                <div class="textarea-wrap">
+                    <textarea
+                        id="events-input"
+                        placeholder="Šlo do školky, hrálo si s kamarádkou Eliškou, vidělo motýla na zahradě…"
+                        rows="4"
+                        maxlength="1200"
+                        required
+                    ></textarea>
+                    <button type="button" id="btn-voice-input" class="btn-voice-input" title="Nadiktovat hlasem">
+                        <svg id="voice-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                            <line x1="12" y1="19" x2="12" y2="23"/>
+                            <line x1="8" y1="23" x2="16" y2="23"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="events-footer">
+                    <span id="voice-status-text" class="voice-status-text hidden">Poslouchám…</span>
+                    <span class="char-count"><span id="char-num">0</span> / 1200</span>
+                </div>
             </div>
 
             <button type="submit" id="btn-generate" class="btn-primary-large">

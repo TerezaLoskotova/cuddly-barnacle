@@ -84,10 +84,10 @@ html, body {
     padding: 40px 32px;
 }
 
-.moon {
-    font-size: 72px;
-    line-height: 1;
-    filter: drop-shadow(0 0 24px rgba(245,200,66,.5));
+.hero-character {
+    width: 130px;
+    height: auto;
+    filter: drop-shadow(0 0 24px rgba(245,200,66,.4));
     animation: float 4s ease-in-out infinite;
 }
 
@@ -107,7 +107,7 @@ html, body {
 .tagline {
     color: var(--muted);
     font-size: 1.05rem;
-    line-height: 1.5;
+    line-height: 1.6;
 }
 
 /* ── Shared header ── */
@@ -168,9 +168,7 @@ html, body {
 }
 
 /* ── Screen 2: Form ── */
-#screen-form {
-    background: var(--bg);
-}
+#screen-form { background: var(--bg); }
 
 .form-card {
     flex: 1;
@@ -216,51 +214,126 @@ html, body {
 .field-group textarea:focus { border-color: var(--purple); }
 .field-group textarea { resize: none; line-height: 1.5; }
 
-.char-count {
-    font-size: .78rem;
-    color: var(--muted);
-    text-align: right;
-    margin-top: -4px;
-}
-
-/* Age picker */
-.age-row {
-    display: flex;
-    align-items: center;
+/* ── Field row (věk + pohlaví vedle sebe) ── */
+.field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 16px;
 }
 
+/* ── Age picker ── */
+.age-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .age-btn {
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     border: 2px solid var(--border);
     background: var(--card);
     color: var(--text);
     font-size: 1.3rem;
-    line-height: 1;
     cursor: pointer;
     transition: border-color .2s, background .2s;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 }
 .age-btn:hover { border-color: var(--purple); background: rgba(124,92,191,.2); }
 
 #age-display {
-    font-size: 2rem;
+    font-size: 1.8rem;
     font-weight: 700;
     color: var(--gold);
-    min-width: 40px;
+    min-width: 32px;
     text-align: center;
 }
 
-.age-unit { color: var(--muted); font-size: .95rem; }
+.age-unit { color: var(--muted); font-size: .9rem; }
+
+/* ── Gender picker ── */
+.gender-row {
+    display: flex;
+    gap: 8px;
+}
+
+.gender-btn {
+    flex: 1;
+    padding: 10px 8px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--muted);
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+}
+.gender-btn.active {
+    border-color: var(--purple);
+    background: rgba(124,92,191,.2);
+    color: var(--text);
+}
+
+/* ── Textarea s hlasovým tlačítkem ── */
+.textarea-wrap {
+    position: relative;
+}
+
+.textarea-wrap textarea {
+    padding-right: 52px;
+}
+
+.btn-voice-input {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: var(--purple);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s, transform .15s;
+}
+.btn-voice-input:hover    { background: #9b78e0; }
+.btn-voice-input.recording {
+    background: #e05555;
+    animation: pulse-rec .8s ease-in-out infinite;
+}
+@keyframes pulse-rec {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.15); }
+}
+
+.events-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: -4px;
+}
+
+.voice-status-text {
+    font-size: .8rem;
+    color: #e05555;
+    font-weight: 600;
+}
+
+.char-count {
+    font-size: .78rem;
+    color: var(--muted);
+}
 
 /* ── Screen 3: Story ── */
-#screen-story {
-    background: var(--bg);
-}
+#screen-story { background: var(--bg); }
 
 .story-card {
     flex: 1;

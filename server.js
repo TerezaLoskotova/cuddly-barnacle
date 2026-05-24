@@ -16,7 +16,8 @@ const SYSTEM_PROMPT = `Jsi milý vypravěč pohádek pro malé děti. Tvoříš 
 
 Pravidla:
 - Pohádka trvá při čtení nahlas 2–3 minuty (cca 300–400 slov)
-- Hlavní hrdina je dítě ze zadaného profilu — používej jeho jméno
+- Hlavní hrdina je dítě ze zadaného profilu — používej jeho jméno a správný rod (dívka = ona/její, chlapec = on/jeho)
+- Skloňuj a přechyluj správně dle pohlaví dítěte v celém textu
 - Příběh vychází z toho, co dítě ten den zažilo, ale magicky to proměňuje
 - Konec je vždy klidný a uklidňující — dítě usíná spokojené
 - Jazyk je jednoduchý, teplý, pohádkový
@@ -46,7 +47,7 @@ Dobrou noc.`;
 }
 
 app.post('/api/generate-story', async (req, res) => {
-    const { childName, childAge, events } = req.body;
+    const { childName, childAge, childGender, events } = req.body;
 
     if (!childName || !events) {
         return res.status(400).json({ error: 'Chybí jméno dítěte nebo dnešní zážitky.' });
@@ -58,7 +59,7 @@ app.post('/api/generate-story', async (req, res) => {
     }
 
     try {
-        const userPrompt = `Dítě: ${childName}, ${childAge} let.
+        const userPrompt = `Dítě: ${childName}, ${childAge} let, pohlaví: ${childGender || 'dívka'}.
 Dnešní zážitky: ${events}
 
 Vytvoř pohádku na dobrou noc.`;

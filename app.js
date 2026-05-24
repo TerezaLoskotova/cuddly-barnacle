@@ -1,6 +1,8 @@
 // ── State ──────────────────────────────────────────────────
 let age = 5;
+let gender = 'dívka';
 let speech = null;
+let recognition = null;
 
 // ── Screen navigation ───────────────────────────────────────
 function showScreen(id) {
@@ -17,10 +19,90 @@ document.getElementById('age-up').addEventListener('click', () => {
     if (age < 12) { age++; document.getElementById('age-display').textContent = age; }
 });
 
+// ── Gender picker ────────────────────────────────────────────
+document.getElementById('gender-girl').addEventListener('click', () => {
+    gender = 'dívka';
+    document.getElementById('gender-girl').classList.add('active');
+    document.getElementById('gender-boy').classList.remove('active');
+});
+document.getElementById('gender-boy').addEventListener('click', () => {
+    gender = 'chlapec';
+    document.getElementById('gender-boy').classList.add('active');
+    document.getElementById('gender-girl').classList.remove('active');
+});
+
 // ── Char counter ─────────────────────────────────────────────
 document.getElementById('events-input').addEventListener('input', function () {
     document.getElementById('char-num').textContent = this.value.length;
 });
+
+// ── Voice input ──────────────────────────────────────────────
+const voiceBtn = document.getElementById('btn-voice-input');
+const voiceStatusText = document.getElementById('voice-status-text');
+const eventsInput = document.getElementById('events-input');
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (!SpeechRecognition) {
+    voiceBtn.title = 'Váš prohlížeč nepodporuje hlasový vstup';
+    voiceBtn.style.opacity = '0.4';
+    voiceBtn.disabled = true;
+} else {
+    recognition = new SpeechRecognition();
+    recognition.lang = 'cs-CZ';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    let baseText = '';
+    let isRecording = false;
+
+    recognition.onresult = (e) => {
+        let interim = '';
+        let final = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+            const transcript = e.results[i][0].transcript;
+            if (e.results[i].isFinal) final += transcript;
+            else interim += transcript;
+        }
+        if (final) baseText += final;
+        const combined = (baseText + interim).slice(0, 1200);
+        eventsInput.value = combined;
+        document.getElementById('char-num').textContent = eventsInput.value.length;
+    };
+
+    recognition.onerror = (e) => {
+        if (e.error !== 'aborted') {
+            voiceStatusText.textContent = 'Chyba mikrofonu';
+            voiceStatusText.classList.remove('hidden');
+            setTimeout(() => voiceStatusText.classList.add('hidden'), 2000);
+        }
+        stopRecording();
+    };
+
+    recognition.onend = () => {
+        if (isRecording) stopRecording();
+    };
+
+    function stopRecording() {
+        isRecording = false;
+        voiceBtn.classList.remove('recording');
+        voiceStatusText.classList.add('hidden');
+        try { recognition.stop(); } catch (_) {}
+    }
+
+    voiceBtn.addEventListener('click', () => {
+        if (isRecording) {
+            stopRecording();
+        } else {
+            baseText = eventsInput.value;
+            isRecording = true;
+            voiceBtn.classList.add('recording');
+            voiceStatusText.classList.remove('hidden');
+            voiceStatusText.textContent = 'Poslouchám…';
+            recognition.start();
+        }
+    });
+}
 
 // ── Navigation ───────────────────────────────────────────────
 document.getElementById('btn-start').addEventListener('click', () => showScreen('screen-form'));
@@ -34,16 +116,15 @@ document.getElementById('btn-new-story').addEventListener('click', () => {
 document.getElementById('story-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const childName  = document.getElementById('child-name').value.trim();
-    const events     = document.getElementById('events-input').value.trim();
+    const childName   = document.getElementById('child-name').value.trim();
+    const events      = document.getElementById('events-input').value.trim();
     const generateBtn = document.getElementById('btn-generate');
-    const btnText    = document.getElementById('btn-generate-text');
-    const spinner    = document.getElementById('btn-generate-spinner');
-    const errorEl    = document.getElementById('form-error');
+    const btnText     = document.getElementById('btn-generate-text');
+    const spinner     = document.getElementById('btn-generate-spinner');
+    const errorEl     = document.getElementById('form-error');
 
     if (!childName || !events) return;
 
-    // Loading state
     generateBtn.disabled = true;
     btnText.textContent = 'Kouzelníme…';
     spinner.classList.remove('hidden');
@@ -53,7 +134,7 @@ document.getElementById('story-form').addEventListener('submit', async (e) => {
         const res = await fetch('/api/generate-story', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ childName, childAge: age, events }),
+            body: JSON.stringify({ childName, childAge: age, childGender: gender, events }),
         });
 
         const data = await res.json();
@@ -62,7 +143,6 @@ document.getElementById('story-form').addEventListener('submit', async (e) => {
             throw new Error(data.error || 'Něco se pokazilo.');
         }
 
-        // Show story screen
         document.getElementById('story-title').textContent = `Pohádka pro ${childName}`;
         document.getElementById('story-text').textContent = data.story;
 
@@ -104,7 +184,6 @@ document.getElementById('btn-play').addEventListener('click', () => {
         return;
     }
 
-    // If currently speaking, pause/resume
     if (window.speechSynthesis.speaking) {
         if (window.speechSynthesis.paused) {
             window.speechSynthesis.resume();
@@ -120,14 +199,12 @@ document.getElementById('btn-play').addEventListener('click', () => {
         return;
     }
 
-    // Start fresh
     const storyText = document.getElementById('story-text').textContent;
     speech = new SpeechSynthesisUtterance(storyText);
     speech.lang = 'cs-CZ';
     speech.rate = 0.88;
     speech.pitch = 1.05;
 
-    // Pick a Czech voice if available
     const voices = window.speechSynthesis.getVoices();
     const czVoice = voices.find(v => v.lang.startsWith('cs'));
     if (czVoice) speech.voice = czVoice;
@@ -146,5 +223,4 @@ document.getElementById('btn-play').addEventListener('click', () => {
     window.speechSynthesis.speak(speech);
 });
 
-// Voices load async on some browsers
 window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
