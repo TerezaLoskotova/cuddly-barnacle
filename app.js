@@ -50,44 +50,45 @@ if (!SpeechRecognition) {
 } else {
     recognition = new SpeechRecognition();
     recognition.lang = 'cs-CZ';
-    recognition.continuous = true;
+    recognition.continuous = false; // mobile-safe: stops after silence, no ambient noise loop
     recognition.interimResults = true;
 
     let baseText = '';
     let isRecording = false;
+    let restartTimer = null;
 
     recognition.onresult = (e) => {
         let interim = '';
-        let final = '';
         for (let i = e.resultIndex; i < e.results.length; i++) {
             const transcript = e.results[i][0].transcript;
-            if (e.results[i].isFinal) final += transcript;
+            if (e.results[i].isFinal) baseText += transcript;
             else interim += transcript;
         }
-        if (final) baseText += final;
-        const combined = (baseText + interim).slice(0, 1200);
-        eventsInput.value = combined;
+        eventsInput.value = (baseText + interim).slice(0, 1200);
         document.getElementById('char-num').textContent = eventsInput.value.length;
     };
 
     recognition.onerror = (e) => {
-        if (e.error !== 'aborted') {
-            voiceStatusText.textContent = 'Chyba mikrofonu';
-            voiceStatusText.classList.remove('hidden');
-            setTimeout(() => voiceStatusText.classList.add('hidden'), 2000);
-        }
+        if (e.error === 'aborted' || e.error === 'no-speech') return;
+        voiceStatusText.textContent = 'Chyba mikrofonu';
+        voiceStatusText.classList.remove('hidden');
+        setTimeout(() => voiceStatusText.classList.add('hidden'), 2000);
         stopRecording();
     };
 
     recognition.onend = () => {
-        if (isRecording) {
-            // Mobile browsers stop recognition after silence even with continuous:true — restart
-            try { recognition.start(); } catch (_) {}
-        }
+        if (!isRecording) return;
+        // Restart after brief pause so user can continue speaking in multiple sentences
+        restartTimer = setTimeout(() => {
+            if (isRecording) {
+                try { recognition.start(); } catch (_) {}
+            }
+        }, 250);
     };
 
     function stopRecording() {
         isRecording = false;
+        clearTimeout(restartTimer);
         voiceBtn.classList.remove('recording');
         voiceStatusText.classList.add('hidden');
         try { recognition.stop(); } catch (_) {}
