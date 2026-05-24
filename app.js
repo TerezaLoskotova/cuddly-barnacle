@@ -80,7 +80,10 @@ if (!SpeechRecognition) {
     };
 
     recognition.onend = () => {
-        if (isRecording) stopRecording();
+        if (isRecording) {
+            // Mobile browsers stop recognition after silence even with continuous:true — restart
+            try { recognition.start(); } catch (_) {}
+        }
     };
 
     function stopRecording() {
