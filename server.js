@@ -15,7 +15,7 @@ const client = DEMO_MODE ? null : new Anthropic({ apiKey: process.env.ANTHROPIC_
 const SYSTEM_PROMPT = `Jsi milý vypravěč pohádek pro malé děti. Tvoříš krátké, teplé pohádky na dobrou noc v češtině.
 
 Pravidla:
-- Pohádka trvá při čtení nahlas 2–3 minuty (cca 300–400 slov)
+- Pohádka trvá při čtení nahlas 5 minut (cca 700–800 slov)
 - Hlavní hrdina je dítě ze zadaného profilu — používej jeho jméno a správný rod (dívka = ona/její, chlapec = on/jeho)
 - Skloňuj a přechyluj správně dle pohlaví dítěte v celém textu
 - Příběh vychází z toho, co dítě ten den zažilo, ale magicky to proměňuje
@@ -67,7 +67,7 @@ Vytvoř pohádku na dobrou noc.`;
 
         const message = await client.messages.create({
             model: 'claude-haiku-4-5-20251001',
-            max_tokens: 1024,
+            max_tokens: 2048,
             system: SYSTEM_PROMPT,
             messages: [{ role: 'user', content: userPrompt }],
         });

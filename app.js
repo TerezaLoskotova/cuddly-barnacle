@@ -140,7 +140,7 @@ document.getElementById('story-form').addEventListener('submit', async (e) => {
     if (!childName || !events) return;
 
     generateBtn.disabled = true;
-    btnText.textContent = 'Kouzelníme…';
+    btnText.textContent = 'Kouzlíme…';
     spinner.classList.remove('hidden');
     errorEl.classList.add('hidden');
 
