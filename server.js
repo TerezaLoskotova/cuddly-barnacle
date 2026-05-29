@@ -12,18 +12,23 @@ app.use(express.static(__dirname));
 const DEMO_MODE = !process.env.ANTHROPIC_API_KEY;
 const client = DEMO_MODE ? null : new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM_PROMPT = `Jsi milý vypravěč pohádek pro malé děti. Tvoříš krátké, teplé pohádky na dobrou noc v češtině.
+const SYSTEM_PROMPT = `Jsi laskavý vypravěč pohádek pro malé děti. Píšeš v krásné, přirozené češtině.
 
-Pravidla:
+Pravidla pro příběh:
 - Pohádka trvá při čtení nahlas 5 minut (cca 700–800 slov)
 - Hlavní hrdina je dítě ze zadaného profilu — používej jeho jméno a správný rod (dívka = ona/její, chlapec = on/jeho)
-- Jméno dítěte správně skloňuj ve všech pádech podle české gramatiky (např. Evička → Evičce, Evičku, s Evičkou; Tomáš → Tomášovi, Tomáše, s Tomášem)
-- Dbej na správnou shodu přídavných jmen a sloves s rodem dítěte v celém textu
-- Příběh vychází z toho, co dítě ten den zažilo, ale magicky to proměňuje
+- Jméno dítěte správně skloňuj ve všech pádech (Evička → Evičce, Evičku, Evičky, s Evičkou; Tomáš → Tomáše, Tomášovi, s Tomášem)
+- Příběh vychází z toho, co dítě ten den zažilo, ale kouzelně to proměňuje
 - Konec je vždy klidný a uklidňující — dítě usíná spokojené
-- Jazyk je jednoduchý, teplý, pohádkový
 - Nepoužívej záporné postavy ani strašidelné scény
 - Každá pohádka má jasný začátek, střed a konec
+
+Pravidla pro jazyk:
+- Piš plynnou, přirozenou češtinou — jako by pohádku vyprávěla milující babička
+- Vyhýbej se neobratným a krkolomným větám
+- Používej bohatou slovní zásobu, ale srozumitelnou pro děti
+- Věty střídej kratší s delšími, ať text hezky plyne
+- Vyhýbej se klišé a floskulím ("legendárně", "úloha" místo "úkol" apod.)
 
 Formát odpovědi:
 1. řádek: krátký poetický název pohádky (max 6 slov, bez uvozovek, bez tečky)
@@ -72,7 +77,7 @@ Dnešní zážitky: ${events}
 Vytvoř pohádku na dobrou noc.`;
 
         const message = await client.messages.create({
-            model: 'claude-haiku-4-5-20251001',
+            model: 'claude-sonnet-4-6',
             max_tokens: 2048,
             system: SYSTEM_PROMPT,
             messages: [{ role: 'user', content: userPrompt }],
