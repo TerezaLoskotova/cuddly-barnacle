@@ -1,8 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import express from 'express';
-import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -57,6 +56,10 @@ Za chvíli přišly sny — plné světlušek, zlatých hvězdičiek a nových d
 Dobrou noc.`;
 }
 
+function sseWrite(res, event, data) {
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+}
+
 app.post('/api/generate-story', async (req, res) => {
     const { childName, childAge, childGender, theme, events } = req.body;
 
@@ -64,9 +67,21 @@ app.post('/api/generate-story', async (req, res) => {
         return res.status(400).json({ error: 'Chybí jméno dítěte nebo dnešní zážitky.' });
     }
 
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('X-Accel-Buffering', 'no');
+
     if (DEMO_MODE) {
-        await new Promise(r => setTimeout(r, 1800)); // simulace načítání
-        return res.json({ story: demoStory(childName), demo: true });
+        const story = demoStory(childName);
+        sseWrite(res, 'title', 'Pohádka o zlaté světlušce');
+        await new Promise(r => setTimeout(r, 400));
+        for (let i = 0; i < story.length; i += 18) {
+            sseWrite(res, 'text', story.slice(i, i + 18));
+            await new Promise(r => setTimeout(r, 25));
+        }
+        sseWrite(res, 'done', {});
+        res.end();
+        return;
     }
 
     try {
@@ -76,26 +91,52 @@ Dnešní zážitky: ${events}
 
 Vytvoř pohádku na dobrou noc.`;
 
-        const message = await client.messages.create({
+        const stream = client.messages.stream({
             model: 'claude-sonnet-4-6',
             max_tokens: 2048,
             system: SYSTEM_PROMPT,
             messages: [{ role: 'user', content: userPrompt }],
         });
 
-        const full = message.content
-            .filter(b => b.type === 'text')
-            .map(b => b.text)
-            .join('');
+        let buf = '';
+        let titleSent = false;
 
-        const lines = full.split('\n');
-        const title = lines[0].trim();
-        const story = lines.slice(1).join('\n').trimStart();
+        stream.on('text', (text) => {
+            if (titleSent) {
+                sseWrite(res, 'text', text);
+                return;
+            }
+            buf += text;
+            const sep = buf.indexOf('\n\n');
+            if (sep !== -1) {
+                sseWrite(res, 'title', buf.slice(0, sep).trim());
+                const rest = buf.slice(sep + 2);
+                titleSent = true;
+                if (rest) sseWrite(res, 'text', rest);
+                buf = '';
+            }
+        });
 
-        res.json({ title, story });
+        stream.on('finalMessage', () => {
+            if (!titleSent) {
+                sseWrite(res, 'title', buf.trim() || `Pohádka pro ${childName}`);
+            }
+            sseWrite(res, 'done', {});
+            res.end();
+        });
+
+        stream.on('error', (err) => {
+            console.error('Stream error:', err);
+            sseWrite(res, 'error', { message: err.message });
+            res.end();
+        });
+
+        req.on('close', () => stream.abort());
+
     } catch (err) {
         console.error('Claude API error:', err);
-        res.status(500).json({ error: err.message || 'Nepodařilo se vytvořit pohádku. Zkus to znovu.' });
+        sseWrite(res, 'error', { message: err.message });
+        res.end();
     }
 });
 

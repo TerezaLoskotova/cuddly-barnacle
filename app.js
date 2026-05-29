@@ -143,7 +143,7 @@ document.getElementById('btn-new-story').addEventListener('click', () => {
     showScreen('screen-form');
 });
 
-// ── Story generation ─────────────────────────────────────────
+// ── Story generation (streaming) ──────────────────────────────
 document.getElementById('story-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -168,23 +168,51 @@ document.getElementById('story-form').addEventListener('submit', async (e) => {
             body: JSON.stringify({ childName, childAge: age, childGender: gender, theme, events }),
         });
 
-        const data = await res.json();
-
         if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
             throw new Error(data.error || 'Něco se pokazilo.');
         }
 
-        saveProfile(childName);
-
-        document.getElementById('story-title').textContent = data.title || `Pohádka pro ${childName}`;
-        document.getElementById('story-text').textContent = data.story;
-
-        const demoBanner = document.getElementById('demo-banner');
-        if (data.demo) demoBanner.classList.remove('hidden');
-        else demoBanner.classList.add('hidden');
+        // Prepare story screen before streaming starts
+        document.getElementById('story-text').textContent = '';
+        document.getElementById('story-title').textContent = `Pohádka pro ${childName}`;
+        document.getElementById('demo-banner').classList.add('hidden');
         document.getElementById('play-hint').textContent = 'Přehrát pohádku hlasem';
         resetPlayButton();
-        showScreen('screen-story');
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let sseBuf = '';
+        let screenShown = false;
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            sseBuf += decoder.decode(value, { stream: true });
+            const parts = sseBuf.split('\n\n');
+            sseBuf = parts.pop();
+
+            for (const part of parts) {
+                const evMatch   = part.match(/^event: (\w+)/m);
+                const dataMatch = part.match(/^data: (.+)/ms);
+                if (!evMatch || !dataMatch) continue;
+
+                const ev   = evMatch[1];
+                const data = JSON.parse(dataMatch[1]);
+
+                if (ev === 'title') {
+                    saveProfile(childName);
+                    document.getElementById('story-title').textContent = data || `Pohádka pro ${childName}`;
+                    if (!screenShown) { showScreen('screen-story'); screenShown = true; }
+                } else if (ev === 'text') {
+                    if (!screenShown) { showScreen('screen-story'); screenShown = true; }
+                    document.getElementById('story-text').textContent += data;
+                } else if (ev === 'error') {
+                    throw new Error(data.message || 'Něco se pokazilo.');
+                }
+            }
+        }
 
     } catch (err) {
         errorEl.textContent = err.message;
