@@ -5,6 +5,23 @@ let theme = '';
 let speech = null;
 let recognition = null;
 
+// ── Profil z localStorage ────────────────────────────────────
+(function loadProfile() {
+    const p = JSON.parse(localStorage.getItem('childProfile') || 'null');
+    if (!p) return;
+    if (p.name) document.getElementById('child-name').value = p.name;
+    if (p.age)  { age = p.age; document.getElementById('age-display').textContent = age; }
+    if (p.gender) {
+        gender = p.gender;
+        document.getElementById('gender-girl').classList.toggle('active', gender === 'dívka');
+        document.getElementById('gender-boy').classList.toggle('active', gender === 'chlapec');
+    }
+})();
+
+function saveProfile(name) {
+    localStorage.setItem('childProfile', JSON.stringify({ name, age, gender }));
+}
+
 // ── Screen navigation ───────────────────────────────────────
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -157,7 +174,9 @@ document.getElementById('story-form').addEventListener('submit', async (e) => {
             throw new Error(data.error || 'Něco se pokazilo.');
         }
 
-        document.getElementById('story-title').textContent = `Pohádka pro ${childName}`;
+        saveProfile(childName);
+
+        document.getElementById('story-title').textContent = data.title || `Pohádka pro ${childName}`;
         document.getElementById('story-text').textContent = data.story;
 
         const demoBanner = document.getElementById('demo-banner');

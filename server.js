@@ -25,7 +25,12 @@ Pravidla:
 - Nepoužívej záporné postavy ani strašidelné scény
 - Každá pohádka má jasný začátek, střed a konec
 
-Vracej POUZE text pohádky, bez nadpisů, bez uvozovek, bez komentářů.`;
+Formát odpovědi:
+1. řádek: krátký poetický název pohádky (max 6 slov, bez uvozovek, bez tečky)
+2. řádek: prázdný
+3. řádek a dál: text pohádky
+
+Nic jiného nepřidávej.`;
 
 function demoStory(childName) {
     return `Byl jednou jeden kouzelný večer, kdy malé ${childName} se vrátilo domů plné zážitků a dobrodružství.
@@ -73,12 +78,16 @@ Vytvoř pohádku na dobrou noc.`;
             messages: [{ role: 'user', content: userPrompt }],
         });
 
-        const story = message.content
+        const full = message.content
             .filter(b => b.type === 'text')
             .map(b => b.text)
             .join('');
 
-        res.json({ story });
+        const lines = full.split('\n');
+        const title = lines[0].trim();
+        const story = lines.slice(1).join('\n').trimStart();
+
+        res.json({ title, story });
     } catch (err) {
         console.error('Claude API error:', err);
         res.status(500).json({ error: err.message || 'Nepodařilo se vytvořit pohádku. Zkus to znovu.' });
