@@ -410,6 +410,24 @@ html, body {
     color: var(--muted);
 }
 
+.btn-share {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 20px;
+    color: var(--muted);
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color .2s, color .2s;
+    margin-top: 4px;
+}
+.btn-share:hover { border-color: var(--purple); color: var(--text); }
+.btn-share.copied { border-color: #4ade80; color: #4ade80; }
+
 /* ── Spinner ── */
 .spinner {
     width: 20px;

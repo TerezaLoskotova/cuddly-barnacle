@@ -238,3 +238,34 @@ document.getElementById('btn-play').addEventListener('click', () => {
 });
 
 window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+
+// ── Sdílení ───────────────────────────────────────────────────
+document.getElementById('btn-share').addEventListener('click', async () => {
+    const title = document.getElementById('story-title').textContent;
+    const text  = document.getElementById('story-text').textContent;
+    const shareBtn  = document.getElementById('btn-share');
+    const shareTxt  = document.getElementById('btn-share-text');
+
+    if (navigator.share) {
+        try {
+            await navigator.share({ title, text });
+        } catch (e) {
+            // user cancelled — ignore
+        }
+        return;
+    }
+
+    // Fallback: copy to clipboard
+    try {
+        await navigator.clipboard.writeText(`${title}\n\n${text}`);
+        shareTxt.textContent = 'Zkopírováno!';
+        shareBtn.classList.add('copied');
+        setTimeout(() => {
+            shareTxt.textContent = 'Sdílet pohádku';
+            shareBtn.classList.remove('copied');
+        }, 2500);
+    } catch (e) {
+        shareTxt.textContent = 'Kopírování selhalo';
+        setTimeout(() => { shareTxt.textContent = 'Sdílet pohádku'; }, 2000);
+    }
+});
