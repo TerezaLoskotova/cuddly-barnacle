@@ -80,7 +80,7 @@ Vytvoř pohádku na dobrou noc.`;
         res.json({ story });
     } catch (err) {
         console.error('Claude API error:', err);
-        res.status(500).json({ error: 'Nepodařilo se vytvořit pohádku. Zkus to znovu.' });
+        res.status(500).json({ error: err.message || 'Nepodařilo se vytvořit pohádku. Zkus to znovu.' });
     }
 });
 
