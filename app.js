@@ -1,6 +1,7 @@
 // ── State ──────────────────────────────────────────────────
 let age = 5;
 let gender = 'dívka';
+let theme = '';
 let speech = null;
 let recognition = null;
 
@@ -29,6 +30,15 @@ document.getElementById('gender-boy').addEventListener('click', () => {
     gender = 'chlapec';
     document.getElementById('gender-boy').classList.add('active');
     document.getElementById('gender-girl').classList.remove('active');
+});
+
+// ── Theme picker ─────────────────────────────────────────────
+document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        theme = btn.dataset.theme;
+    });
 });
 
 // ── Char counter ─────────────────────────────────────────────
@@ -138,7 +148,7 @@ document.getElementById('story-form').addEventListener('submit', async (e) => {
         const res = await fetch('/api/generate-story', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ childName, childAge: age, childGender: gender, events }),
+            body: JSON.stringify({ childName, childAge: age, childGender: gender, theme, events }),
         });
 
         const data = await res.json();

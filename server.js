@@ -47,7 +47,7 @@ Dobrou noc.`;
 }
 
 app.post('/api/generate-story', async (req, res) => {
-    const { childName, childAge, childGender, events } = req.body;
+    const { childName, childAge, childGender, theme, events } = req.body;
 
     if (!childName || !events) {
         return res.status(400).json({ error: 'Chybí jméno dítěte nebo dnešní zážitky.' });
@@ -59,7 +59,8 @@ app.post('/api/generate-story', async (req, res) => {
     }
 
     try {
-        const userPrompt = `Dítě: ${childName}, ${childAge} let, pohlaví: ${childGender || 'dívka'}.
+        const themeNote = theme ? `\nProstředí pohádky: ${theme}.` : '';
+        const userPrompt = `Dítě: ${childName}, ${childAge} let, pohlaví: ${childGender || 'dívka'}.${themeNote}
 Dnešní zážitky: ${events}
 
 Vytvoř pohádku na dobrou noc.`;

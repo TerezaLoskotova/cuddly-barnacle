@@ -279,6 +279,31 @@ html, body {
     color: var(--text);
 }
 
+/* ── Theme picker ── */
+.theme-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.theme-btn {
+    padding: 8px 14px;
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    background: var(--card);
+    color: var(--muted);
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+}
+.theme-btn.active {
+    border-color: var(--gold);
+    background: rgba(245,200,66,.12);
+    color: var(--gold);
+}
+
 /* ── Textarea s hlasovým tlačítkem ── */
 .textarea-wrap {
     position: relative;
