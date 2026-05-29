@@ -66,12 +66,10 @@ Dnešní zážitky: ${events}
 Vytvoř pohádku na dobrou noc.`;
 
         const message = await client.messages.create({
-            model: 'claude-opus-4-7',
+            model: 'claude-haiku-4-5-20251001',
             max_tokens: 1024,
-            thinking: { type: 'adaptive' },
             system: SYSTEM_PROMPT,
             messages: [{ role: 'user', content: userPrompt }],
-            cache_control: { type: 'ephemeral' },
         });
 
         const story = message.content
