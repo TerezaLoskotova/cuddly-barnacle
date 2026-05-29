@@ -5,22 +5,113 @@ let theme = '';
 let speech = null;
 let recognition = null;
 
-// ── Profil z localStorage ────────────────────────────────────
-(function loadProfile() {
-    const p = JSON.parse(localStorage.getItem('childProfile') || 'null');
-    if (!p) return;
-    if (p.name) document.getElementById('child-name').value = p.name;
-    if (p.age)  { age = p.age; document.getElementById('age-display').textContent = age; }
-    if (p.gender) {
-        gender = p.gender;
-        document.getElementById('gender-girl').classList.toggle('active', gender === 'dívka');
-        document.getElementById('gender-boy').classList.toggle('active', gender === 'chlapec');
-    }
-})();
+// ── Profily & Historie ───────────────────────────────────────
+function getProfiles() { return JSON.parse(localStorage.getItem('profiles') || '[]'); }
+function getStories()  { return JSON.parse(localStorage.getItem('stories')  || '[]'); }
+function setProfiles(p) { localStorage.setItem('profiles', JSON.stringify(p)); }
+function setStories(s)  { localStorage.setItem('stories',  JSON.stringify(s.slice(-30))); }
 
-function saveProfile(name) {
-    localStorage.setItem('childProfile', JSON.stringify({ name, age, gender }));
+function upsertProfile(name, a, g) {
+    const profiles = getProfiles();
+    const idx = profiles.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+    if (idx !== -1) {
+        profiles[idx] = { ...profiles[idx], age: a, gender: g };
+        // move to front (most recently used)
+        profiles.unshift(profiles.splice(idx, 1)[0]);
+    } else {
+        profiles.unshift({ id: Date.now().toString(), name, age: a, gender: g });
+    }
+    setProfiles(profiles);
+    renderProfileChips();
 }
+
+function addStoryToHistory(title, story, profileName) {
+    const stories = getStories();
+    stories.push({ id: Date.now().toString(), title, story, profileName, date: new Date().toISOString() });
+    setStories(stories);
+}
+
+function loadProfileIntoForm(p) {
+    document.getElementById('child-name').value = p.name;
+    age = p.age;
+    document.getElementById('age-display').textContent = age;
+    gender = p.gender;
+    document.getElementById('gender-girl').classList.toggle('active', gender === 'dívka');
+    document.getElementById('gender-boy').classList.toggle('active', gender === 'chlapec');
+    renderProfileChips();
+}
+
+function renderProfileChips() {
+    const profiles = getProfiles();
+    const section = document.getElementById('profile-section');
+    const row     = document.getElementById('profile-row');
+
+    if (profiles.length === 0) { section.classList.add('hidden'); return; }
+    section.classList.remove('hidden');
+
+    const currentName = document.getElementById('child-name').value.trim().toLowerCase();
+    row.innerHTML = '';
+
+    profiles.forEach(p => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'profile-chip' + (p.name.toLowerCase() === currentName ? ' active' : '');
+        btn.textContent = p.name;
+        btn.addEventListener('click', () => loadProfileIntoForm(p));
+        row.appendChild(btn);
+    });
+
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'profile-chip profile-chip-new';
+    addBtn.textContent = '+ Nový';
+    addBtn.addEventListener('click', () => {
+        document.getElementById('child-name').value = '';
+        document.getElementById('child-name').focus();
+        renderProfileChips();
+    });
+    row.appendChild(addBtn);
+}
+
+function renderHistory() {
+    const stories = getStories();
+    const list = document.getElementById('history-list');
+
+    if (stories.length === 0) {
+        list.innerHTML = '<p class="history-empty">Zatím žádné pohádky.<br>Vykouzlete první!</p>';
+        return;
+    }
+
+    list.innerHTML = '';
+    [...stories].reverse().forEach(s => {
+        const d = new Date(s.date).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long' });
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        item.innerHTML = `
+            <div class="history-item-info">
+                <div class="history-item-title">${s.title}</div>
+                <div class="history-item-meta">${s.profileName} · ${d}</div>
+            </div>
+            <svg class="history-arrow" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        `;
+        item.addEventListener('click', () => {
+            document.getElementById('story-title').textContent = s.title;
+            document.getElementById('story-text').textContent  = s.story;
+            document.getElementById('demo-banner').classList.add('hidden');
+            document.getElementById('play-hint').textContent = 'Přehrát pohádku hlasem';
+            resetPlayButton();
+            showScreen('screen-story');
+        });
+        list.appendChild(item);
+    });
+}
+
+// Init — load most recent profile
+(function init() {
+    const profiles = getProfiles();
+    if (profiles.length > 0) loadProfileIntoForm(profiles[0]);
+    else renderProfileChips();
+})();
 
 // ── Screen navigation ───────────────────────────────────────
 function showScreen(id) {
@@ -142,6 +233,11 @@ document.getElementById('btn-new-story').addEventListener('click', () => {
     stopSpeech();
     showScreen('screen-form');
 });
+document.getElementById('btn-history').addEventListener('click', () => {
+    renderHistory();
+    showScreen('screen-history');
+});
+document.getElementById('btn-back-history').addEventListener('click', () => showScreen('screen-home'));
 
 // ── Story generation (streaming) ──────────────────────────────
 document.getElementById('story-form').addEventListener('submit', async (e) => {
@@ -184,6 +280,7 @@ document.getElementById('story-form').addEventListener('submit', async (e) => {
         const decoder = new TextDecoder();
         let sseBuf = '';
         let screenShown = false;
+        let storyTitle = `Pohádka pro ${childName}`;
 
         while (true) {
             const { done, value } = await reader.read();
@@ -202,12 +299,16 @@ document.getElementById('story-form').addEventListener('submit', async (e) => {
                 const data = JSON.parse(dataMatch[1]);
 
                 if (ev === 'title') {
-                    saveProfile(childName);
-                    document.getElementById('story-title').textContent = data || `Pohádka pro ${childName}`;
+                    storyTitle = data || storyTitle;
+                    upsertProfile(childName, age, gender);
+                    document.getElementById('story-title').textContent = storyTitle;
                     if (!screenShown) { showScreen('screen-story'); screenShown = true; }
                 } else if (ev === 'text') {
                     if (!screenShown) { showScreen('screen-story'); screenShown = true; }
                     document.getElementById('story-text').textContent += data;
+                } else if (ev === 'done') {
+                    const fullStory = document.getElementById('story-text').textContent;
+                    addStoryToHistory(storyTitle, fullStory, childName);
                 } else if (ev === 'error') {
                     throw new Error(data.message || 'Něco se pokazilo.');
                 }

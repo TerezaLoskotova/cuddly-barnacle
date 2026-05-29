@@ -22,40 +22,29 @@
             <span></span><span></span><span></span><span></span><span></span>
         </div>
         <div class="home-content">
-            <!-- Vlastní postavička — čarodějník pohádek -->
             <svg class="hero-character" viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <!-- hvězdičky kolem -->
                 <text x="8"  y="30"  font-size="14" fill="#f5c842" opacity="0.8">✦</text>
                 <text x="95" y="20"  font-size="10" fill="#f5c842" opacity="0.6">✦</text>
                 <text x="100" y="60" font-size="8"  fill="#f5c842" opacity="0.5">✦</text>
                 <text x="5"  y="75"  font-size="9"  fill="#f5c842" opacity="0.5">✦</text>
-                <!-- tělo -->
                 <ellipse cx="60" cy="105" rx="28" ry="22" fill="#3b2080"/>
-                <!-- kniha -->
                 <rect x="36" y="108" width="48" height="30" rx="4" fill="#f5c842" opacity="0.9"/>
                 <line x1="60" y1="108" x2="60" y2="138" stroke="#c9a020" stroke-width="1.5"/>
                 <line x1="44" y1="118" x2="56" y2="118" stroke="#c9a020" stroke-width="1"/>
                 <line x1="44" y1="124" x2="56" y2="124" stroke="#c9a020" stroke-width="1"/>
                 <line x1="64" y1="118" x2="76" y2="118" stroke="#c9a020" stroke-width="1"/>
                 <line x1="64" y1="124" x2="76" y2="124" stroke="#c9a020" stroke-width="1"/>
-                <!-- hlava -->
                 <circle cx="60" cy="72" r="22" fill="#f5c9a0"/>
-                <!-- oči -->
                 <ellipse cx="53" cy="70" rx="3.5" ry="4" fill="#2a1060"/>
                 <ellipse cx="67" cy="70" rx="3.5" ry="4" fill="#2a1060"/>
                 <circle cx="54.5" cy="68.5" r="1" fill="white"/>
                 <circle cx="68.5" cy="68.5" r="1" fill="white"/>
-                <!-- úsměv -->
                 <path d="M52 78 Q60 84 68 78" stroke="#c07040" stroke-width="1.8" stroke-linecap="round" fill="none"/>
-                <!-- tváře -->
                 <circle cx="48" cy="76" r="4" fill="#f09070" opacity="0.35"/>
                 <circle cx="72" cy="76" r="4" fill="#f09070" opacity="0.35"/>
-                <!-- čepice -->
                 <path d="M38 60 Q60 5 82 60 Z" fill="#5a35b0"/>
                 <ellipse cx="60" cy="60" rx="24" ry="7" fill="#7c5cbf"/>
-                <!-- hvězda na čepici -->
                 <text x="53" y="45" font-size="13" fill="#f5c842">★</text>
-                <!-- vlasy -->
                 <path d="M38 68 Q35 80 37 88" stroke="#8b5e3c" stroke-width="3" stroke-linecap="round" fill="none"/>
                 <path d="M82 68 Q85 80 83 88" stroke="#8b5e3c" stroke-width="3" stroke-linecap="round" fill="none"/>
             </svg>
@@ -63,6 +52,9 @@
             <p class="tagline">Pohádka pro vaše dítko z dnešních událostí.<br>Udělejte jeho či její den kouzelnější.</p>
             <button id="btn-start" class="btn-primary-large">
                 Vytvořit pohádku
+            </button>
+            <button id="btn-history" class="btn-ghost">
+                📖 Historie pohádek
             </button>
         </div>
     </div>
@@ -76,6 +68,11 @@
                 </svg>
             </button>
             <h2>Nová pohádka</h2>
+        </div>
+
+        <!-- Profily dětí -->
+        <div id="profile-section" class="profile-section hidden">
+            <div id="profile-row" class="profile-row"></div>
         </div>
 
         <form id="story-form" class="form-card">
@@ -204,6 +201,19 @@
                 <span id="btn-share-text">Sdílet pohádku</span>
             </button>
         </div>
+    </div>
+
+    <!-- ── Obrazovka 4: Historie ── -->
+    <div id="screen-history" class="screen">
+        <div class="screen-header">
+            <button id="btn-back-history" class="btn-back" aria-label="Zpět">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
+            </button>
+            <h2>Historie pohádek</h2>
+        </div>
+        <div id="history-list" class="history-list"></div>
     </div>
 
     <script src="app.js" type="module"></script>

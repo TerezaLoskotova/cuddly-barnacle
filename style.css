@@ -110,6 +110,19 @@ html, body {
     line-height: 1.6;
 }
 
+.btn-ghost {
+    background: none;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 28px;
+    color: var(--muted);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color .2s, color .2s;
+}
+.btn-ghost:hover { border-color: var(--purple); color: var(--text); }
+
 /* ── Shared header ── */
 .screen-header {
     display: flex;
@@ -169,6 +182,36 @@ html, body {
 
 /* ── Screen 2: Form ── */
 #screen-form { background: var(--bg); }
+
+/* ── Profile chips ── */
+.profile-section {
+    padding: 12px 20px 0;
+    max-width: 520px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.profile-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.profile-chip {
+    padding: 7px 16px;
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    background: var(--card);
+    color: var(--muted);
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+}
+.profile-chip:hover  { border-color: var(--purple); color: var(--text); }
+.profile-chip.active { border-color: var(--gold); background: rgba(245,200,66,.12); color: var(--gold); }
+.profile-chip-new    { border-style: dashed; }
 
 .form-card {
     flex: 1;
@@ -463,6 +506,61 @@ html, body {
     max-width: 640px;
     width: calc(100% - 40px);
     align-self: center;
+}
+
+/* ── History screen ── */
+#screen-history { background: var(--bg); }
+
+.history-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    max-width: 520px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    cursor: pointer;
+    transition: border-color .2s;
+}
+.history-item:hover { border-color: var(--purple); }
+
+.history-item-info { flex: 1; min-width: 0; }
+
+.history-item-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.history-item-meta {
+    font-size: .82rem;
+    color: var(--muted);
+    margin-top: 3px;
+}
+
+.history-arrow { color: var(--muted); flex-shrink: 0; }
+
+.history-empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 60px 20px;
+    font-size: 1rem;
+    line-height: 1.6;
 }
 
 /* ── Utility ── */
