@@ -281,38 +281,46 @@ document.getElementById('story-form').addEventListener('submit', async (e) => {
         let sseBuf = '';
         let screenShown = false;
         let storyTitle = `Pohádka pro ${childName}`;
+        let completed = false;
 
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
 
-            sseBuf += decoder.decode(value, { stream: true });
-            const parts = sseBuf.split('\n\n');
-            sseBuf = parts.pop();
+                sseBuf += decoder.decode(value, { stream: true });
+                const parts = sseBuf.split('\n\n');
+                sseBuf = parts.pop();
 
-            for (const part of parts) {
-                const evMatch   = part.match(/^event: (\w+)/m);
-                const dataMatch = part.match(/^data: (.+)/ms);
-                if (!evMatch || !dataMatch) continue;
+                for (const part of parts) {
+                    const evMatch   = part.match(/^event: (\w+)/m);
+                    const dataMatch = part.match(/^data: (.+)/ms);
+                    if (!evMatch || !dataMatch) continue;
 
-                const ev   = evMatch[1];
-                const data = JSON.parse(dataMatch[1]);
+                    const ev   = evMatch[1];
+                    const data = JSON.parse(dataMatch[1]);
 
-                if (ev === 'title') {
-                    storyTitle = data || storyTitle;
-                    upsertProfile(childName, age, gender);
-                    document.getElementById('story-title').textContent = storyTitle;
-                    if (!screenShown) { showScreen('screen-story'); screenShown = true; }
-                } else if (ev === 'text') {
-                    if (!screenShown) { showScreen('screen-story'); screenShown = true; }
-                    document.getElementById('story-text').textContent += data;
-                } else if (ev === 'done') {
-                    const fullStory = document.getElementById('story-text').textContent;
-                    addStoryToHistory(storyTitle, fullStory, childName);
-                } else if (ev === 'error') {
-                    throw new Error(data.message || 'Něco se pokazilo.');
+                    if (ev === 'title') {
+                        storyTitle = data || storyTitle;
+                        upsertProfile(childName, age, gender);
+                        document.getElementById('story-title').textContent = storyTitle;
+                        if (!screenShown) { showScreen('screen-story'); screenShown = true; }
+                    } else if (ev === 'text') {
+                        if (!screenShown) { showScreen('screen-story'); screenShown = true; }
+                        document.getElementById('story-text').textContent += data;
+                    } else if (ev === 'done') {
+                        completed = true;
+                        try {
+                            addStoryToHistory(storyTitle, document.getElementById('story-text').textContent, childName);
+                        } catch (_) {}
+                    } else if (ev === 'error') {
+                        throw new Error(data.message || 'Něco se pokazilo.');
+                    }
                 }
             }
+        } catch (streamErr) {
+            // Ignore connection-close errors after successful completion
+            if (!completed) throw streamErr;
         }
 
     } catch (err) {
