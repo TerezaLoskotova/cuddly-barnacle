@@ -4,6 +4,8 @@ let gender = 'dívka';
 let theme = '';
 let speech = null;
 let recognition = null;
+let audioEl = null;
+let voiceId = localStorage.getItem('elVoiceId') || null;
 
 // ── Profily & Historie ───────────────────────────────────────
 function getProfiles() { return JSON.parse(localStorage.getItem('profiles') || '[]'); }
@@ -243,6 +245,152 @@ document.getElementById('btn-history').addEventListener('click', () => {
 });
 document.getElementById('btn-back-history').addEventListener('click', () => showScreen('screen-home'));
 
+// ── Voice setup navigation ───────────────────────────────────
+document.getElementById('btn-voice-setup').addEventListener('click', () => {
+    renderVoiceScreen();
+    showScreen('screen-voice');
+});
+document.getElementById('btn-back-voice').addEventListener('click', () => showScreen('screen-home'));
+document.getElementById('btn-rerecord').addEventListener('click', () => {
+    document.getElementById('voice-done-section').classList.add('hidden');
+    document.getElementById('voice-record-section').classList.remove('hidden');
+});
+
+function renderVoiceScreen() {
+    if (voiceId) {
+        document.getElementById('voice-done-section').classList.remove('hidden');
+        document.getElementById('voice-record-section').classList.add('hidden');
+        document.getElementById('voice-setup-label').textContent = '🎙 Váš hlas je aktivní';
+    } else {
+        document.getElementById('voice-done-section').classList.add('hidden');
+        document.getElementById('voice-record-section').classList.remove('hidden');
+        document.getElementById('voice-setup-label').textContent = '🎙 Nastavit svůj hlas';
+    }
+}
+
+// ── MediaRecorder voice recording ───────────────────────────
+(function initVoiceRecorder() {
+    const btnRecord   = document.getElementById('btn-record');
+    const timerEl     = document.getElementById('voice-timer');
+    const statusEl    = document.getElementById('voice-status');
+
+    let mediaRecorder = null;
+    let chunks        = [];
+    let timerInterval = null;
+    let seconds       = 0;
+    let isRecording   = false;
+
+    function formatTime(s) {
+        return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    }
+
+    function startTimer() {
+        seconds = 0;
+        timerEl.textContent = formatTime(seconds);
+        timerInterval = setInterval(() => {
+            seconds++;
+            timerEl.textContent = formatTime(seconds);
+            if (seconds >= 120) stopRecording(); // auto-stop at 2 min
+        }, 1000);
+    }
+
+    function stopTimer() {
+        clearInterval(timerInterval);
+    }
+
+    async function stopRecording() {
+        if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+        isRecording = false;
+        btnRecord.classList.remove('recording');
+        document.getElementById('btn-record-icon').textContent = '🎙';
+        document.getElementById('btn-record-text').textContent = 'Začít nahrávat';
+        stopTimer();
+        mediaRecorder.stop();
+    }
+
+    btnRecord.addEventListener('click', async () => {
+        if (isRecording) {
+            await stopRecording();
+            return;
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+            mediaRecorder = new MediaRecorder(stream, { mimeType });
+            chunks = [];
+
+            mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+
+            mediaRecorder.onstop = async () => {
+                stream.getTracks().forEach(t => t.stop());
+
+                if (seconds < 10) {
+                    statusEl.textContent = 'Nahrajte alespoň 10 sekund hlasu.';
+                    statusEl.className = 'voice-status error';
+                    statusEl.classList.remove('hidden');
+                    return;
+                }
+
+                statusEl.textContent = 'Nahrávám hlas…';
+                statusEl.className = 'voice-status';
+                statusEl.classList.remove('hidden');
+                btnRecord.disabled = true;
+
+                try {
+                    const blob = new Blob(chunks, { type: mimeType });
+                    const base64 = await blobToBase64(blob);
+
+                    const res = await fetch('/api/create-voice', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ audio: base64, mimeType }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'Chyba nahrávání hlasu.');
+
+                    voiceId = data.voiceId;
+                    localStorage.setItem('elVoiceId', voiceId);
+
+                    statusEl.textContent = 'Hlas byl úspěšně nahrán!';
+                    statusEl.className = 'voice-status success';
+
+                    setTimeout(() => {
+                        renderVoiceScreen();
+                    }, 1500);
+
+                } catch (err) {
+                    statusEl.textContent = err.message || 'Nepodařilo se nahrát hlas.';
+                    statusEl.className = 'voice-status error';
+                } finally {
+                    btnRecord.disabled = false;
+                }
+            };
+
+            isRecording = true;
+            btnRecord.classList.add('recording');
+            document.getElementById('btn-record-icon').textContent = '⏹';
+            document.getElementById('btn-record-text').textContent = 'Zastavit nahrávání';
+            startTimer();
+            mediaRecorder.start();
+
+        } catch (err) {
+            statusEl.textContent = 'Nepodařilo se získat přístup k mikrofonu.';
+            statusEl.className = 'voice-status error';
+            statusEl.classList.remove('hidden');
+        }
+    });
+})();
+
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
 // ── Story generation (streaming) ──────────────────────────────
 document.getElementById('story-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -344,6 +492,11 @@ function resetPlayButton() {
 }
 
 function stopSpeech() {
+    if (audioEl) {
+        audioEl.pause();
+        audioEl.src = '';
+        audioEl = null;
+    }
     if (speech) {
         window.speechSynthesis.cancel();
         speech = null;
@@ -352,13 +505,25 @@ function stopSpeech() {
     document.getElementById('play-hint').textContent = 'Přehrát pohádku hlasem';
 }
 
-document.getElementById('btn-play').addEventListener('click', () => {
-    if (!('speechSynthesis' in window)) {
-        document.getElementById('play-hint').textContent = 'Váš prohlížeč nepodporuje hlasové čtení.';
+document.getElementById('btn-play').addEventListener('click', async () => {
+    // ── Pause/resume HTML audio (ElevenLabs) ──
+    if (audioEl) {
+        if (audioEl.paused) {
+            audioEl.play();
+            document.getElementById('icon-play').classList.add('hidden');
+            document.getElementById('icon-pause').classList.remove('hidden');
+            document.getElementById('play-hint').textContent = 'Pohádka se přehrává…';
+        } else {
+            audioEl.pause();
+            document.getElementById('icon-play').classList.remove('hidden');
+            document.getElementById('icon-pause').classList.add('hidden');
+            document.getElementById('play-hint').textContent = 'Pozastaveno';
+        }
         return;
     }
 
-    if (window.speechSynthesis.speaking) {
+    // ── Pause/resume Web Speech API ──
+    if (window.speechSynthesis && window.speechSynthesis.speaking) {
         if (window.speechSynthesis.paused) {
             window.speechSynthesis.resume();
             document.getElementById('icon-play').classList.add('hidden');
@@ -374,6 +539,58 @@ document.getElementById('btn-play').addEventListener('click', () => {
     }
 
     const storyText = document.getElementById('story-text').textContent;
+
+    // ── ElevenLabs TTS ──
+    if (voiceId) {
+        const playBtn = document.getElementById('btn-play');
+        playBtn.disabled = true;
+        document.getElementById('play-hint').textContent = 'Připravuji váš hlas…';
+
+        try {
+            const res = await fetch('/api/tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: storyText, voiceId }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || 'Chyba TTS.');
+            }
+
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            audioEl = new Audio(url);
+
+            audioEl.onplay = () => {
+                document.getElementById('icon-play').classList.add('hidden');
+                document.getElementById('icon-pause').classList.remove('hidden');
+                document.getElementById('play-hint').textContent = 'Pohádka se přehrává…';
+            };
+            audioEl.onended = audioEl.onerror = () => {
+                URL.revokeObjectURL(url);
+                audioEl = null;
+                resetPlayButton();
+                document.getElementById('play-hint').textContent = 'Dobrou noc!';
+            };
+
+            audioEl.play();
+        } catch (err) {
+            audioEl = null;
+            resetPlayButton();
+            document.getElementById('play-hint').textContent = err.message || 'Chyba přehrávání.';
+        } finally {
+            playBtn.disabled = false;
+        }
+        return;
+    }
+
+    // ── Fallback: Web Speech API ──
+    if (!('speechSynthesis' in window)) {
+        document.getElementById('play-hint').textContent = 'Váš prohlížeč nepodporuje hlasové čtení.';
+        return;
+    }
+
     speech = new SpeechSynthesisUtterance(storyText);
     speech.lang = 'cs-CZ';
     speech.rate = 0.88;
