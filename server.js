@@ -136,6 +136,80 @@ Vytvoř pohádku na dobrou noc.`;
     }
 });
 
+// ── ElevenLabs: nahrání hlasu ──────────────────────────────────
+app.post('/api/create-voice', async (req, res) => {
+    const EL_KEY = process.env.ELEVENLABS_API_KEY;
+    if (!EL_KEY) return res.status(400).json({ error: 'ElevenLabs API klíč není nastaven.' });
+
+    const { audio, mimeType } = req.body;
+    if (!audio) return res.status(400).json({ error: 'Chybí audio data.' });
+
+    try {
+        const audioBuffer = Buffer.from(audio, 'base64');
+        const formData = new FormData();
+        formData.append('name', 'Rodičovský hlas');
+        formData.append('files', new Blob([audioBuffer], { type: mimeType || 'audio/webm' }), 'voice.webm');
+
+        const response = await fetch('https://api.elevenlabs.io/v1/voices/add', {
+            method: 'POST',
+            headers: { 'xi-api-key': EL_KEY },
+            body: formData,
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail?.message || `ElevenLabs error ${response.status}`);
+
+        res.json({ voiceId: data.voice_id });
+    } catch (err) {
+        console.error('ElevenLabs create voice error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── ElevenLabs: TTS ────────────────────────────────────────────
+app.post('/api/tts', async (req, res) => {
+    const EL_KEY = process.env.ELEVENLABS_API_KEY;
+    if (!EL_KEY) return res.status(400).json({ error: 'ElevenLabs API klíč není nastaven.' });
+
+    const { text, voiceId } = req.body;
+    if (!text || !voiceId) return res.status(400).json({ error: 'Chybí text nebo voiceId.' });
+
+    try {
+        const response = await fetch(
+            `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+            {
+                method: 'POST',
+                headers: {
+                    'xi-api-key': EL_KEY,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    text,
+                    model_id: 'eleven_multilingual_v2',
+                    voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+                }),
+            }
+        );
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.detail?.message || `ElevenLabs TTS error ${response.status}`);
+        }
+
+        res.setHeader('Content-Type', 'audio/mpeg');
+        const reader = response.body.getReader();
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            res.write(value);
+        }
+        res.end();
+    } catch (err) {
+        console.error('TTS error:', err);
+        if (!res.headersSent) res.status(500).json({ error: err.message });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Pohádky server běží na http://localhost:${PORT}`);

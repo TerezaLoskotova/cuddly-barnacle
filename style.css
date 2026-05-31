@@ -121,7 +121,9 @@ html, body {
     cursor: pointer;
     transition: border-color .2s, color .2s;
 }
-.btn-ghost:hover { border-color: var(--purple); color: var(--text); }
+.btn-ghost-small { font-size: .9rem; padding: 9px 22px; }
+.btn-ghost:hover  { border-color: var(--purple); color: var(--text); }
+.btn-ghost.voice-active { border-color: #4ade80; color: #4ade80; }
 
 /* ── Shared header ── */
 .screen-header {
@@ -562,6 +564,71 @@ html, body {
     font-size: 1rem;
     line-height: 1.6;
 }
+
+/* ── Voice screen ── */
+#screen-voice { background: var(--bg); }
+
+.voice-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 40px 24px;
+    text-align: center;
+    max-width: 480px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.voice-instruction {
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.7;
+}
+.voice-instruction strong { color: var(--text); }
+
+.voice-timer {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: .05em;
+    min-height: 3.5rem;
+}
+
+.btn-record {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    padding: 18px 36px;
+    color: var(--text);
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+}
+.btn-record:hover { border-color: var(--purple); }
+.btn-record.recording {
+    border-color: #e05555;
+    background: rgba(224,85,85,.12);
+    color: #e05555;
+    animation: pulse-rec .8s ease-in-out infinite;
+}
+
+.voice-status {
+    font-size: .95rem;
+    color: var(--muted);
+    font-weight: 500;
+}
+.voice-status.success { color: #4ade80; }
+.voice-status.error   { color: #f87171; }
+
+.voice-done-icon { font-size: 3.5rem; }
+.voice-done-text { color: var(--muted); font-size: 1rem; line-height: 1.7; }
 
 /* ── Utility ── */
 .hidden { display: none !important; }

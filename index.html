@@ -56,6 +56,9 @@
             <button id="btn-history" class="btn-ghost">
                 📖 Historie pohádek
             </button>
+            <button id="btn-voice-setup" class="btn-ghost btn-ghost-small">
+                <span id="voice-setup-label">🎙 Nastavit svůj hlas</span>
+            </button>
         </div>
     </div>
 
@@ -214,6 +217,36 @@
             <h2>Historie pohádek</h2>
         </div>
         <div id="history-list" class="history-list"></div>
+    </div>
+
+    <!-- ── Obrazovka 5: Nahrávání hlasu ── -->
+    <div id="screen-voice" class="screen">
+        <div class="screen-header">
+            <button id="btn-back-voice" class="btn-back" aria-label="Zpět">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
+            </button>
+            <h2>Váš hlas</h2>
+        </div>
+
+        <!-- Hotovo — hlas již existuje -->
+        <div id="voice-done-section" class="voice-section hidden">
+            <div class="voice-done-icon">🎙</div>
+            <p class="voice-done-text">Váš hlas je aktivní.<br>Pohádky budou čteny vaším hlasem.</p>
+            <button id="btn-rerecord" class="btn-ghost">Nahrát znovu</button>
+        </div>
+
+        <!-- Nahrávání -->
+        <div id="voice-record-section" class="voice-section">
+            <p class="voice-instruction">Nahrajte alespoň <strong>1 minutu</strong> svého hlasu — čtěte pohádku, vyprávějte, mluvte přirozeně. Čím více, tím lepší výsledek.</p>
+            <div id="voice-timer" class="voice-timer">0:00</div>
+            <button id="btn-record" class="btn-record">
+                <span id="btn-record-icon">🎙</span>
+                <span id="btn-record-text">Začít nahrávat</span>
+            </button>
+            <p id="voice-status" class="voice-status hidden"></p>
+        </div>
     </div>
 
     <script src="app.js" type="module"></script>
