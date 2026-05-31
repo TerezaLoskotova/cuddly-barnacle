@@ -91,53 +91,48 @@ Dnešní zážitky: ${events}
 
 Vytvoř pohádku na dobrou noc.`;
 
-        const stream = client.messages.stream({
+        const stream = await client.messages.create({
             model: 'claude-sonnet-4-6',
             max_tokens: 2048,
             system: SYSTEM_PROMPT,
             messages: [{ role: 'user', content: userPrompt }],
+            stream: true,
         });
 
         let buf = '';
         let titleSent = false;
 
-        stream.on('text', (text) => {
-            if (titleSent) {
-                sseWrite(res, 'text', text);
-                return;
+        for await (const event of stream) {
+            if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+                const text = event.delta.text;
+                if (titleSent) {
+                    sseWrite(res, 'text', text);
+                } else {
+                    buf += text;
+                    const sep = buf.indexOf('\n\n');
+                    if (sep !== -1) {
+                        sseWrite(res, 'title', buf.slice(0, sep).trim());
+                        const rest = buf.slice(sep + 2);
+                        titleSent = true;
+                        if (rest) sseWrite(res, 'text', rest);
+                        buf = '';
+                    }
+                }
             }
-            buf += text;
-            const sep = buf.indexOf('\n\n');
-            if (sep !== -1) {
-                sseWrite(res, 'title', buf.slice(0, sep).trim());
-                const rest = buf.slice(sep + 2);
-                titleSent = true;
-                if (rest) sseWrite(res, 'text', rest);
-                buf = '';
-            }
-        });
+        }
 
-        stream.on('message', () => {
-            if (!titleSent) {
-                sseWrite(res, 'title', buf.trim() || `Pohádka pro ${childName}`);
-                if (buf) sseWrite(res, 'text', '');
-            }
-            sseWrite(res, 'done', {});
-            res.end();
-        });
-
-        stream.on('error', (err) => {
-            console.error('Stream error:', err);
-            sseWrite(res, 'error', { message: err.message || String(err) || 'Chyba při generování.' });
-            res.end();
-        });
-
-        req.on('close', () => { try { stream.abort(); } catch (_) {} });
+        if (!titleSent) {
+            sseWrite(res, 'title', buf.trim() || `Pohádka pro ${childName}`);
+        }
+        sseWrite(res, 'done', {});
+        res.end();
 
     } catch (err) {
         console.error('Claude API error:', err);
-        sseWrite(res, 'error', { message: err.message || String(err) || 'Chyba Claude API.' });
-        res.end();
+        if (!res.writableEnded) {
+            sseWrite(res, 'error', { message: err.message || String(err) || 'Chyba Claude API.' });
+            res.end();
+        }
     }
 });
 
