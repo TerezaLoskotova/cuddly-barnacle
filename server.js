@@ -117,9 +117,10 @@ Vytvoř pohádku na dobrou noc.`;
             }
         });
 
-        stream.on('finalMessage', () => {
+        stream.on('message', () => {
             if (!titleSent) {
                 sseWrite(res, 'title', buf.trim() || `Pohádka pro ${childName}`);
+                if (buf) sseWrite(res, 'text', '');
             }
             sseWrite(res, 'done', {});
             res.end();
@@ -127,15 +128,15 @@ Vytvoř pohádku na dobrou noc.`;
 
         stream.on('error', (err) => {
             console.error('Stream error:', err);
-            sseWrite(res, 'error', { message: err.message });
+            sseWrite(res, 'error', { message: err.message || String(err) || 'Chyba při generování.' });
             res.end();
         });
 
-        req.on('close', () => stream.abort());
+        req.on('close', () => { try { stream.abort(); } catch (_) {} });
 
     } catch (err) {
         console.error('Claude API error:', err);
-        sseWrite(res, 'error', { message: err.message });
+        sseWrite(res, 'error', { message: err.message || String(err) || 'Chyba Claude API.' });
         res.end();
     }
 });

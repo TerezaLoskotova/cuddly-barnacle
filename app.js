@@ -227,11 +227,15 @@ if (!SpeechRecognition) {
 }
 
 // ── Navigation ───────────────────────────────────────────────
-document.getElementById('btn-start').addEventListener('click', () => showScreen('screen-form'));
+function goToForm() {
+    document.getElementById('form-error').classList.add('hidden');
+    showScreen('screen-form');
+}
+document.getElementById('btn-start').addEventListener('click', goToForm);
 document.getElementById('btn-back').addEventListener('click', () => showScreen('screen-home'));
 document.getElementById('btn-new-story').addEventListener('click', () => {
     stopSpeech();
-    showScreen('screen-form');
+    goToForm();
 });
 document.getElementById('btn-history').addEventListener('click', () => {
     renderHistory();
