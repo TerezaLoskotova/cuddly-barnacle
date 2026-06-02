@@ -18,7 +18,6 @@ function upsertProfile(name, a, g) {
     const idx = profiles.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
     if (idx !== -1) {
         profiles[idx] = { ...profiles[idx], age: a, gender: g };
-        // move to front (most recently used)
         profiles.unshift(profiles.splice(idx, 1)[0]);
     } else {
         profiles.unshift({ id: Date.now().toString(), name, age: a, gender: g });
@@ -170,7 +169,7 @@ if (!SpeechRecognition) {
 } else {
     recognition = new SpeechRecognition();
     recognition.lang = 'cs-CZ';
-    recognition.continuous = false; // mobile-safe: stops after silence, no ambient noise loop
+    recognition.continuous = false;
     recognition.interimResults = true;
 
     let baseText = '';
@@ -193,12 +192,11 @@ if (!SpeechRecognition) {
         voiceStatusText.textContent = 'Chyba mikrofonu';
         voiceStatusText.classList.remove('hidden');
         setTimeout(() => voiceStatusText.classList.add('hidden'), 2000);
-        stopRecording();
+        stopRecognition();
     };
 
     recognition.onend = () => {
         if (!isRecording) return;
-        // Restart after brief pause so user can continue speaking in multiple sentences
         restartTimer = setTimeout(() => {
             if (isRecording) {
                 try { recognition.start(); } catch (_) {}
@@ -206,7 +204,7 @@ if (!SpeechRecognition) {
         }, 250);
     };
 
-    function stopRecording() {
+    function stopRecognition() {
         isRecording = false;
         clearTimeout(restartTimer);
         voiceBtn.classList.remove('recording');
@@ -216,7 +214,7 @@ if (!SpeechRecognition) {
 
     voiceBtn.addEventListener('click', () => {
         if (isRecording) {
-            stopRecording();
+            stopRecognition();
         } else {
             baseText = eventsInput.value;
             isRecording = true;
@@ -270,9 +268,9 @@ function renderVoiceScreen() {
 
 // ── MediaRecorder voice recording ───────────────────────────
 (function initVoiceRecorder() {
-    const btnRecord   = document.getElementById('btn-record');
-    const timerEl     = document.getElementById('voice-timer');
-    const statusEl    = document.getElementById('voice-status');
+    const btnRecord = document.getElementById('btn-record');
+    const timerEl   = document.getElementById('voice-timer');
+    const statusEl  = document.getElementById('voice-status');
 
     let mediaRecorder = null;
     let chunks        = [];
@@ -290,13 +288,11 @@ function renderVoiceScreen() {
         timerInterval = setInterval(() => {
             seconds++;
             timerEl.textContent = formatTime(seconds);
-            if (seconds >= 120) stopRecording(); // auto-stop at 2 min
+            if (seconds >= 120) stopRecording();
         }, 1000);
     }
 
-    function stopTimer() {
-        clearInterval(timerInterval);
-    }
+    function stopTimer() { clearInterval(timerInterval); }
 
     async function stopRecording() {
         if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
@@ -309,10 +305,7 @@ function renderVoiceScreen() {
     }
 
     btnRecord.addEventListener('click', async () => {
-        if (isRecording) {
-            await stopRecording();
-            return;
-        }
+        if (isRecording) { await stopRecording(); return; }
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -332,7 +325,7 @@ function renderVoiceScreen() {
                     return;
                 }
 
-                statusEl.textContent = 'Nahrávám hlas…';
+                statusEl.textContent = 'Nahrávám hlas na server…';
                 statusEl.className = 'voice-status';
                 statusEl.classList.remove('hidden');
                 btnRecord.disabled = true;
@@ -355,9 +348,7 @@ function renderVoiceScreen() {
                     statusEl.textContent = 'Hlas byl úspěšně nahrán!';
                     statusEl.className = 'voice-status success';
 
-                    setTimeout(() => {
-                        renderVoiceScreen();
-                    }, 1500);
+                    setTimeout(() => renderVoiceScreen(), 1500);
 
                 } catch (err) {
                     statusEl.textContent = err.message || 'Nepodařilo se nahrát hlas.';
@@ -421,7 +412,6 @@ document.getElementById('story-form').addEventListener('submit', async (e) => {
             throw new Error(data.error || 'Něco se pokazilo.');
         }
 
-        // Prepare story screen before streaming starts
         document.getElementById('story-text').textContent = '';
         document.getElementById('story-title').textContent = `Pohádka pro ${childName}`;
         document.getElementById('demo-banner').classList.add('hidden');
@@ -471,7 +461,6 @@ document.getElementById('story-form').addEventListener('submit', async (e) => {
                 }
             }
         } catch (streamErr) {
-            // Ignore connection-close errors after successful completion
             if (!completed) throw streamErr;
         }
 
@@ -506,7 +495,7 @@ function stopSpeech() {
 }
 
 document.getElementById('btn-play').addEventListener('click', async () => {
-    // ── Pause/resume HTML audio (ElevenLabs) ──
+    // Pause/resume HTML audio (ElevenLabs)
     if (audioEl) {
         if (audioEl.paused) {
             audioEl.play();
@@ -522,7 +511,7 @@ document.getElementById('btn-play').addEventListener('click', async () => {
         return;
     }
 
-    // ── Pause/resume Web Speech API ──
+    // Pause/resume Web Speech API
     if (window.speechSynthesis && window.speechSynthesis.speaking) {
         if (window.speechSynthesis.paused) {
             window.speechSynthesis.resume();
@@ -540,7 +529,7 @@ document.getElementById('btn-play').addEventListener('click', async () => {
 
     const storyText = document.getElementById('story-text').textContent;
 
-    // ── ElevenLabs TTS ──
+    // ElevenLabs TTS
     if (voiceId) {
         const playBtn = document.getElementById('btn-play');
         playBtn.disabled = true;
@@ -585,7 +574,7 @@ document.getElementById('btn-play').addEventListener('click', async () => {
         return;
     }
 
-    // ── Fallback: Web Speech API ──
+    // Fallback: Web Speech API
     if (!('speechSynthesis' in window)) {
         document.getElementById('play-hint').textContent = 'Váš prohlížeč nepodporuje hlasové čtení.';
         return;
@@ -627,12 +616,11 @@ document.getElementById('btn-share').addEventListener('click', async () => {
         try {
             await navigator.share({ title, text });
         } catch (e) {
-            // user cancelled — ignore
+            // user cancelled
         }
         return;
     }
 
-    // Fallback: copy to clipboard
     try {
         await navigator.clipboard.writeText(`${title}\n\n${text}`);
         shareTxt.textContent = 'Zkopírováno!';
