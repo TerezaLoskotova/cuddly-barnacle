@@ -13,7 +13,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <title>Můj itinerář</title>
-    <link rel="stylesheet" href="style.css?v=17">
+    <link rel="stylesheet" href="style.css?v=18">
 </head>
 <body>
     <div id="app">
@@ -136,6 +136,15 @@
                     </svg>
                     Nápady
                 </button>
+                <button id="tab-parish" class="tab-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <polyline points="9 12 11 14 15 10"/>
+                    </svg>
+                    Farnosti
+                </button>
             </div>
 
             <!-- ── Tasks section ── -->
@@ -146,6 +155,47 @@
                 </div>
                 <ul id="task-list"></ul>
                 <p id="empty-state" class="empty-state">Zatím žádné úkoly.<br>Nadiktuj nebo přidej první úkol!</p>
+            </section>
+
+            <!-- ── Parish lists section ── -->
+            <section id="parish-section" class="hidden">
+                <div class="tasks-header">
+                    <h2>Listy farností</h2>
+                    <span id="parish-month-label" class="task-count"></span>
+                </div>
+
+                <div class="parish-half-block">
+                    <div class="parish-half-header">1. – 14.</div>
+                    <ul id="parish-list-1" class="parish-list"></ul>
+                </div>
+
+                <div class="parish-half-block">
+                    <div class="parish-half-header">15. – konec měsíce</div>
+                    <ul id="parish-list-2" class="parish-list"></ul>
+                </div>
+
+                <div id="parish-add-form" class="parish-add-form hidden">
+                    <input type="text" id="parish-new-text" class="input" placeholder="Nový úkol…" maxlength="200" />
+                    <div class="parish-radio-row">
+                        <label class="parish-radio-label">
+                            <input type="radio" name="parish-half" value="1" checked> 1. – 14.
+                        </label>
+                        <label class="parish-radio-label">
+                            <input type="radio" name="parish-half" value="2"> 15. – konec
+                        </label>
+                    </div>
+                    <div class="form-actions" style="margin-top:10px">
+                        <button id="parish-add-confirm" class="btn btn-primary">Přidat</button>
+                        <button id="parish-add-cancel" class="btn btn-ghost">Zrušit</button>
+                    </div>
+                </div>
+
+                <div class="parish-footer">
+                    <button id="parish-add-btn" class="btn btn-outline">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Přidat úkol
+                    </button>
+                </div>
             </section>
 
             <!-- ── Notes section ── -->

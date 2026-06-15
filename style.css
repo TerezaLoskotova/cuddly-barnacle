@@ -827,6 +827,114 @@ input[type="date"] {
 }
 .recurring-item.inactive .recurring-meta { color: var(--text-muted); }
 
+/* ── Parish lists ──────────────────────────────────────── */
+#parish-section {
+    background: var(--surface);
+}
+
+.parish-half-block {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+    margin-bottom: 0;
+}
+
+.parish-half-header {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--primary);
+    background: var(--primary-light);
+    padding: 6px 16px;
+}
+
+.parish-list {
+    list-style: none;
+}
+
+.parish-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+}
+.parish-item:last-child { border-bottom: none; }
+
+.parish-item-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    cursor: pointer;
+    min-width: 0;
+}
+
+.parish-item-label input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+.parish-item-text {
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.4;
+    word-break: break-word;
+    color: var(--text);
+    transition: color .15s;
+}
+
+.parish-item.parish-done .parish-item-text {
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+
+.parish-delete-btn {
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity .15s;
+    color: var(--danger);
+}
+.parish-item:hover .parish-delete-btn,
+.parish-item:focus-within .parish-delete-btn {
+    opacity: 1;
+}
+
+.parish-empty {
+    padding: 12px 16px;
+    font-size: 0.88rem;
+    color: var(--text-muted);
+}
+
+.parish-footer {
+    padding: 16px;
+}
+
+.parish-add-form {
+    padding: 12px 16px 4px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.parish-radio-row {
+    display: flex;
+    gap: 20px;
+}
+
+.parish-radio-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
 .recurring-toggle { color: var(--mint); }
 .recurring-toggle:hover { background: #c2ead9; }
 

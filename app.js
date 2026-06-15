@@ -3,13 +3,33 @@
    ────────────────────────────────────────────────────────── */
 
 // ── State ─────────────────────────────────────────────────
+const PARISH_DEFAULT_ITEMS = [
+    { id: 'p1',  text: 'Zavolat tiskárně',                     half: 1 },
+    { id: 'p2',  text: 'Rozeslat e-maily s uzávěrkou',         half: 1 },
+    { id: 'p3',  text: 'Rozeslat e-mail s prosbou o úvodní slovo', half: 1 },
+    { id: 'p4',  text: 'Masařík',                              half: 2 },
+    { id: 'p5',  text: 'Ruprechtice Lucka',                    half: 2 },
+    { id: 'p6',  text: 'Rochlice Lucka',                       half: 2 },
+    { id: 'p7',  text: 'Hanychov Skalický',                    half: 2 },
+    { id: 'p8',  text: 'Bémová Vratislavice',                  half: 2 },
+    { id: 'p9',  text: 'Dl. Most Olekšák',                     half: 2 },
+    { id: 'p10', text: 'Další 1',                              half: 2 },
+    { id: 'p11', text: 'Další 2',                              half: 2 },
+    { id: 'p12', text: 'Odeslat Masaříkovi ke kontrole',       half: 2 },
+    { id: 'p13', text: 'Odeslat do tiskárny',                  half: 2 },
+    { id: 'p14', text: 'Odeslat Jeronýmovi',                   half: 2 },
+    { id: 'p15', text: 'Odeslat Marušce',                      half: 2 },
+];
+
 const state = {
-    tasks:          JSON.parse(localStorage.getItem('vd_tasks')     || '[]'),
-    notes:          JSON.parse(localStorage.getItem('vd_notes')     || '[]'),
-    recurring:      JSON.parse(localStorage.getItem('vd_recurring') || '[]'),
-    settings:       JSON.parse(localStorage.getItem('vd_settings')  || '{"summaryTime":"21:00","autoRollover":true}'),
+    tasks:          JSON.parse(localStorage.getItem('vd_tasks')         || '[]'),
+    notes:          JSON.parse(localStorage.getItem('vd_notes')         || '[]'),
+    recurring:      JSON.parse(localStorage.getItem('vd_recurring')     || '[]'),
+    settings:       JSON.parse(localStorage.getItem('vd_settings')      || '{"summaryTime":"21:00","autoRollover":true}'),
+    parishItems:    JSON.parse(localStorage.getItem('vd_parish_items')  || 'null') || PARISH_DEFAULT_ITEMS,
+    parishDone:     JSON.parse(localStorage.getItem('vd_parish_done')   || '{}'),
     currentDate:    todayStr(),   // YYYY-MM-DD string being viewed
-    activeTab:      'tasks',      // 'tasks' | 'notes'
+    activeTab:      'tasks',      // 'tasks' | 'notes' | 'parish'
     parsedVoice:    null,         // { text, reminder, type, days? }
     reminderTimers: {},
 };
@@ -45,10 +65,19 @@ function uid() {
 }
 
 function save() {
-    localStorage.setItem('vd_tasks',      JSON.stringify(state.tasks));
-    localStorage.setItem('vd_notes',      JSON.stringify(state.notes));
-    localStorage.setItem('vd_recurring',  JSON.stringify(state.recurring));
-    localStorage.setItem('vd_settings',   JSON.stringify(state.settings));
+    localStorage.setItem('vd_tasks',         JSON.stringify(state.tasks));
+    localStorage.setItem('vd_notes',         JSON.stringify(state.notes));
+    localStorage.setItem('vd_recurring',     JSON.stringify(state.recurring));
+    localStorage.setItem('vd_settings',      JSON.stringify(state.settings));
+    localStorage.setItem('vd_parish_items',  JSON.stringify(state.parishItems));
+    localStorage.setItem('vd_parish_done',   JSON.stringify(state.parishDone));
+}
+
+function currentMonthStr() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    return `${y}-${m}`;
 }
 
 // ── Firebase / FCM ─────────────────────────────────────────
@@ -1078,8 +1107,84 @@ function switchTab(tab) {
     state.activeTab = tab;
     document.getElementById('tab-tasks').classList.toggle('active', tab === 'tasks');
     document.getElementById('tab-notes').classList.toggle('active', tab === 'notes');
+    document.getElementById('tab-parish').classList.toggle('active', tab === 'parish');
     document.getElementById('tasks-section').classList.toggle('hidden', tab !== 'tasks');
     document.getElementById('notes-section').classList.toggle('hidden', tab !== 'notes');
+    document.getElementById('parish-section').classList.toggle('hidden', tab !== 'parish');
+    if (tab === 'parish') renderParish();
+}
+
+// ── Parish lists ───────────────────────────────────────────
+const MONTH_NAMES_GEN = ['ledna','února','března','dubna','května','června',
+    'července','srpna','září','října','listopadu','prosince'];
+
+function renderParish() {
+    const month = currentMonthStr();
+    const done  = state.parishDone[month] || {};
+    const now   = new Date();
+    const monthLabel = `${now.getDate() <= 14 ? '1.–14.' : '15.–' + new Date(now.getFullYear(), now.getMonth()+1, 0).getDate() + '.'} ${MONTH_NAMES_GEN[now.getMonth()]} ${now.getFullYear()}`;
+    document.getElementById('parish-month-label').textContent = monthLabel;
+
+    [1, 2].forEach(half => {
+        const list = document.getElementById(`parish-list-${half}`);
+        list.innerHTML = '';
+        const items = state.parishItems.filter(i => i.half === half);
+        items.forEach(item => {
+            const isDone = !!done[item.id];
+            const li = document.createElement('li');
+            li.className = `parish-item${isDone ? ' parish-done' : ''}`;
+            li.innerHTML = `
+                <label class="parish-item-label">
+                    <input type="checkbox" class="parish-check" data-id="${escHtml(item.id)}"${isDone ? ' checked' : ''}>
+                    <span class="parish-item-text">${escHtml(item.text)}</span>
+                </label>
+                <button class="parish-delete-btn icon-btn" data-id="${escHtml(item.id)}" title="Smazat">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6l-1 14H6L5 6"/>
+                        <path d="M10 11v6M14 11v6"/>
+                    </svg>
+                </button>
+            `;
+            li.querySelector('.parish-check').addEventListener('change', e => {
+                toggleParishDone(item.id, e.target.checked);
+            });
+            li.querySelector('.parish-delete-btn').addEventListener('click', () => {
+                deleteParishItem(item.id);
+            });
+            list.appendChild(li);
+        });
+        if (items.length === 0) {
+            const empty = document.createElement('li');
+            empty.className = 'parish-empty';
+            empty.textContent = 'Žádné úkoly v této části.';
+            list.appendChild(empty);
+        }
+    });
+}
+
+function toggleParishDone(itemId, isDone) {
+    const month = currentMonthStr();
+    if (!state.parishDone[month]) state.parishDone[month] = {};
+    if (isDone) {
+        state.parishDone[month][itemId] = true;
+    } else {
+        delete state.parishDone[month][itemId];
+    }
+    save();
+    renderParish();
+}
+
+function deleteParishItem(itemId) {
+    state.parishItems = state.parishItems.filter(i => i.id !== itemId);
+    save();
+    renderParish();
+}
+
+function addParishItem(text, half) {
+    state.parishItems.push({ id: uid(), text: text.trim(), half });
+    save();
+    renderParish();
 }
 
 // ── Voice recognition ──────────────────────────────────────
@@ -1624,6 +1729,36 @@ function init() {
     });
     document.getElementById('settings-modal').addEventListener('click', e => {
         if (e.target === e.currentTarget) closeSettingsModal();
+    });
+
+    // ── Parish list events ─────────────────────────────────
+    document.getElementById('tab-parish').addEventListener('click', () => switchTab('parish'));
+
+    document.getElementById('parish-add-btn').addEventListener('click', () => {
+        document.getElementById('parish-add-form').classList.remove('hidden');
+        document.getElementById('parish-add-btn').classList.add('hidden');
+        document.getElementById('parish-new-text').focus();
+    });
+
+    document.getElementById('parish-add-cancel').addEventListener('click', () => {
+        document.getElementById('parish-add-form').classList.add('hidden');
+        document.getElementById('parish-add-btn').classList.remove('hidden');
+        document.getElementById('parish-new-text').value = '';
+    });
+
+    document.getElementById('parish-add-confirm').addEventListener('click', () => {
+        const text = document.getElementById('parish-new-text').value.trim();
+        if (!text) return;
+        const half = parseInt(document.querySelector('input[name="parish-half"]:checked').value);
+        addParishItem(text, half);
+        document.getElementById('parish-new-text').value = '';
+        document.getElementById('parish-add-form').classList.add('hidden');
+        document.getElementById('parish-add-btn').classList.remove('hidden');
+    });
+
+    document.getElementById('parish-new-text').addEventListener('keydown', e => {
+        if (e.key === 'Enter') document.getElementById('parish-add-confirm').click();
+        if (e.key === 'Escape') document.getElementById('parish-add-cancel').click();
     });
 }
 
