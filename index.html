@@ -13,7 +13,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <title>Můj itinerář</title>
-    <link rel="stylesheet" href="style.css?v=18">
+    <link rel="stylesheet" href="style.css?v=19">
 </head>
 <body>
     <div id="app">
@@ -346,20 +346,45 @@
                     <input type="text" id="rec-task-input" placeholder="Co chceš připomenout?" class="input" maxlength="500" />
                 </div>
 
-                <!-- Day picker -->
-                <div class="day-picker">
-                    <button class="day-btn" data-day="1">Po</button>
-                    <button class="day-btn" data-day="2">Út</button>
-                    <button class="day-btn" data-day="3">St</button>
-                    <button class="day-btn" data-day="4">Čt</button>
-                    <button class="day-btn" data-day="5">Pá</button>
-                    <button class="day-btn" data-day="6">So</button>
-                    <button class="day-btn" data-day="0">Ne</button>
+                <!-- Mode toggle -->
+                <div class="rec-mode-toggle">
+                    <button id="rec-mode-weekly" class="rec-mode-btn active">Dny v týdnu</button>
+                    <button id="rec-mode-interval" class="rec-mode-btn">Každých N dní</button>
                 </div>
-                <div class="day-presets">
-                    <button class="btn btn-small btn-outline preset-btn" data-days="1,2,3,4,5">Pracovní dny</button>
-                    <button class="btn btn-small btn-outline preset-btn" data-days="0,6">Víkend</button>
-                    <button class="btn btn-small btn-outline preset-btn" data-days="0,1,2,3,4,5,6">Každý den</button>
+
+                <!-- Weekly mode -->
+                <div id="rec-weekly-section">
+                    <div class="day-picker">
+                        <button class="day-btn" data-day="1">Po</button>
+                        <button class="day-btn" data-day="2">Út</button>
+                        <button class="day-btn" data-day="3">St</button>
+                        <button class="day-btn" data-day="4">Čt</button>
+                        <button class="day-btn" data-day="5">Pá</button>
+                        <button class="day-btn" data-day="6">So</button>
+                        <button class="day-btn" data-day="0">Ne</button>
+                    </div>
+                    <div class="day-presets">
+                        <button class="btn btn-small btn-outline preset-btn" data-days="1,2,3,4,5">Pracovní dny</button>
+                        <button class="btn btn-small btn-outline preset-btn" data-days="0,6">Víkend</button>
+                        <button class="btn btn-small btn-outline preset-btn" data-days="0,1,2,3,4,5,6">Každý den</button>
+                    </div>
+                </div>
+
+                <!-- Interval mode -->
+                <div id="rec-interval-section" class="hidden">
+                    <div class="form-row form-row-split">
+                        <div class="edit-field">
+                            <span class="edit-field-label">Opakovat každých:</span>
+                            <div class="interval-input-row">
+                                <input type="number" id="rec-interval-days" class="input" value="14" min="1" max="365" style="width:80px" />
+                                <span class="interval-unit">dní</span>
+                            </div>
+                        </div>
+                        <div class="edit-field">
+                            <span class="edit-field-label">Od data:</span>
+                            <input type="date" id="rec-interval-start" class="input" />
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-row form-row-split" style="margin-top:10px">

@@ -935,6 +935,43 @@ input[type="date"] {
     cursor: pointer;
 }
 
+/* ── Recurring mode toggle ─────────────────────────────── */
+.rec-mode-toggle {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.rec-mode-btn {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: background .15s, color .15s;
+}
+.rec-mode-btn:first-child { border-right: 1px solid var(--border); }
+.rec-mode-btn.active {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.interval-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.interval-unit {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
 .recurring-toggle { color: var(--mint); }
 .recurring-toggle:hover { background: #c2ead9; }
 

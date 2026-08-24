@@ -757,7 +757,25 @@ function addRecurring(text, reminder, days) {
     };
     state.recurring.push(rec);
     save();
-    spawnRecurringTasks();   // spawn for today immediately if applicable
+    spawnRecurringTasks();
+    renderRecurring();
+}
+
+function addRecurringInterval(text, reminder, intervalDays, startDate) {
+    if (!text.trim() || intervalDays < 1 || !startDate) return;
+    const rec = {
+        id:           uid(),
+        text:         text.trim(),
+        reminder:     reminder || null,
+        intervalDays,
+        startDate,
+        active:       true,
+        spawnedDates: [],
+        createdAt:    Date.now(),
+    };
+    state.recurring.push(rec);
+    save();
+    spawnRecurringTasks();
     renderRecurring();
 }
 
@@ -772,6 +790,15 @@ function toggleRecurring(id) {
     if (r) { r.active = !r.active; save(); renderRecurring(); }
 }
 
+function isIntervalDue(rec, dateStr) {
+    if (!rec.intervalDays || !rec.startDate) return false;
+    if (dateStr < rec.startDate) return false;
+    const start = new Date(rec.startDate + 'T00:00:00');
+    const check = new Date(dateStr + 'T00:00:00');
+    const diffDays = Math.round((check - start) / 86400000);
+    return diffDays % rec.intervalDays === 0;
+}
+
 /**
  * Spawn recurring tasks for a specific date (if not already done).
  */
@@ -781,8 +808,12 @@ function spawnRecurringForDate(dateStr) {
 
     state.recurring.forEach(rec => {
         if (!rec.active) return;
-        if (!rec.days.includes(dayOfWeek)) return;
         if (rec.spawnedDates.includes(dateStr)) return;
+
+        const due = rec.intervalDays
+            ? isIntervalDue(rec, dateStr)
+            : (rec.days || []).includes(dayOfWeek);
+        if (!due) return;
 
         addTask(rec.text, rec.reminder, dateStr, rec.id);
         rec.spawnedDates.push(dateStr);
@@ -832,11 +863,14 @@ function renderRecurring() {
         li.className = `recurring-item${rec.active ? '' : ' inactive'}`;
 
         const timeStr = rec.reminder ? ` v ${rec.reminder}` : '';
+        const scheduleStr = rec.intervalDays
+            ? `každých ${rec.intervalDays} dní od ${rec.startDate}`
+            : daysLabel(rec.days || []);
 
         li.innerHTML = `
             <div class="recurring-body">
                 <div class="recurring-text">${escHtml(rec.text)}</div>
-                <div class="recurring-meta">${daysLabel(rec.days)}${timeStr}</div>
+                <div class="recurring-meta">${scheduleStr}${timeStr}</div>
             </div>
             <button class="recurring-toggle icon-btn" data-id="${rec.id}" title="${rec.active ? 'Pozastavit' : 'Aktivovat'}">
                 ${rec.active
@@ -1709,15 +1743,42 @@ function init() {
     });
 
     // Add recurring manually
-    document.getElementById('confirm-recurring').addEventListener('click', () => {
-        const text    = document.getElementById('rec-task-input').value.trim();
-        const time    = document.getElementById('rec-time-input').value || null;
-        const selDays = getSelectedDays();
-        if (!text || selDays.length === 0) {
-            showInAppAlert('Vyber alespoň jeden den a napiš název připomínky.');
-            return;
+    // Recurring mode toggle
+    let recurringMode = 'weekly';
+    document.getElementById('rec-mode-weekly').addEventListener('click', () => {
+        recurringMode = 'weekly';
+        document.getElementById('rec-mode-weekly').classList.add('active');
+        document.getElementById('rec-mode-interval').classList.remove('active');
+        document.getElementById('rec-weekly-section').classList.remove('hidden');
+        document.getElementById('rec-interval-section').classList.add('hidden');
+    });
+    document.getElementById('rec-mode-interval').addEventListener('click', () => {
+        recurringMode = 'interval';
+        document.getElementById('rec-mode-interval').classList.add('active');
+        document.getElementById('rec-mode-weekly').classList.remove('active');
+        document.getElementById('rec-interval-section').classList.remove('hidden');
+        document.getElementById('rec-weekly-section').classList.add('hidden');
+        // Default start date to tomorrow
+        if (!document.getElementById('rec-interval-start').value) {
+            document.getElementById('rec-interval-start').value = addDays(todayStr(), 1);
         }
-        addRecurring(text, time, selDays);
+    });
+
+    document.getElementById('confirm-recurring').addEventListener('click', () => {
+        const text = document.getElementById('rec-task-input').value.trim();
+        const time = document.getElementById('rec-time-input').value || null;
+        if (!text) { showInAppAlert('Napiš název připomínky.'); return; }
+
+        if (recurringMode === 'interval') {
+            const days  = parseInt(document.getElementById('rec-interval-days').value) || 14;
+            const start = document.getElementById('rec-interval-start').value;
+            if (!start) { showInAppAlert('Vyber datum začátku.'); return; }
+            addRecurringInterval(text, time, days, start);
+        } else {
+            const selDays = getSelectedDays();
+            if (selDays.length === 0) { showInAppAlert('Vyber alespoň jeden den.'); return; }
+            addRecurring(text, time, selDays);
+        }
         document.getElementById('rec-task-input').value = '';
         document.getElementById('rec-time-input').value = '';
         document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
