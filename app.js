@@ -781,8 +781,10 @@ function addRecurringInterval(text, reminder, intervalDays, startDate) {
 
 function deleteRecurring(id) {
     state.recurring = state.recurring.filter(r => r.id !== id);
+    state.tasks     = state.tasks.filter(t => t.recurringId !== id);
     save();
     renderRecurring();
+    renderTasks();
 }
 
 function toggleRecurring(id) {
@@ -833,6 +835,13 @@ function spawnRecurringTasks() {
         if (spawnRecurringForDate(addDays(todayStr(), i))) anySpawned = true;
     }
     if (anySpawned) save();
+}
+
+function cleanupOrphanedRecurringTasks() {
+    const validIds = new Set(state.recurring.map(r => r.id));
+    const before = state.tasks.length;
+    state.tasks = state.tasks.filter(t => !t.recurringId || validIds.has(t.recurringId));
+    if (state.tasks.length !== before) { save(); renderTasks(); }
 }
 
 // Label for day array, e.g. [1,2,3,4,5] → "Po–Pá"
@@ -1591,6 +1600,7 @@ function navigateDate(delta) {
 
 // ── Init ───────────────────────────────────────────────────
 function init() {
+    cleanupOrphanedRecurringTasks();
     spawnRecurringTasks();
     renderDateNav();
     renderWeekStrip();
